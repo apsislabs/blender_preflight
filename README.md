@@ -28,5 +28,7 @@ The script processes each `.blend` file in the following steps:
 ## TODO
 
 1. Code cleanup. The script is quite rough as is.
-2. Better documentation.
-3. Parent script for executing on an entire directory.
+2. Stop using blender selections for state management.
+3. Allow for meshes with same name
+3. Better documentation.
+4. Parent script for executing on an entire directory.

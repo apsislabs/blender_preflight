@@ -18,13 +18,43 @@ def main():
         help='Output path for the generated FBX.'
     )
 
-    output_path = parser.parse_known_args()[0].out
+    destination = parser.parse_known_args()[0].out
 
     # Get all relevant layers
-    filepath = os.path.normpath(output_path)
+    destination = os.path.normpath(destination)
     basename = camelFilename(bpy.context.blend_data.filepath)
     layers = get_layers_with_content()
 
+    # Do Output
+    output_files = []
+    output_files += export_layers(layers=layers, basename=basename, destination=destination)
+    output_files += export_animations(basename=basename, destination=destination)
+
+    # Report Performance
+    print("\n------------------------------------------------------")
+    print("Preflight Export Finished in: %.4f sec" % (time.time() - time_start))
+    print("Output Files: \n\t" + "\n\t".join(output_files))
+
+def export_animations(basename, destination):
+    output_files = []
+    for ob in bpy.context.scene.objects:
+        if ob.type != 'ARMATURE':
+            continue
+        
+        armature = ob
+        bpy.ops.object.select_all(action='DESELECT')
+        armature.select = True
+        output_name, output_dir = destination_from_basename(basename, destination, suffix="-" + armature.name + "@animations.fbx")
+        validate_destination(output_dir)
+
+        try:
+            export_selection(filepath=output_name, object_types={'ARMATURE'}, include_animations=True)
+            output_files.append(output_name)
+        except:
+            print("Error while attempting to write: " + output_name)
+    return output_files
+
+def export_layers(layers, basename, destination):
     output_files = []
 
     # Iterate and Export
@@ -35,27 +65,28 @@ def main():
 
         mesh_name = name_for_selection()
 
-        output_name = basename + "-" + mesh_name + ".fbx"
-        output_name = os.path.join(filepath, output_name)
-        output_dir = os.path.dirname(output_name)
-        
-        if not os.path.exists(output_dir):
-            os.makedirs(output_dir)
-        
-        print("\n------------------------------------------------------")
-        print("Outputting file: " + output_name)
-        print("------------------------------------------------------\n")
+        output_name, output_dir = destination_from_basename(basename, destination, suffix="-" + mesh_name + ".fbx")
+        validate_destination(output_dir)
         
         try:
             export_selection(filepath=output_name)
             output_files.append(output_name)
         except:
             print("Error while attempting to write: " + output_name)
+    
+    return output_files
 
-    # Report Performance
-    print("\n------------------------------------------------------")
-    print("Preflight Export Finished in: %.4f sec" % (time.time() - time_start))
-    print("Output Files: \n\t" + "\n\t".join(output_files))
+
+def destination_from_basename(basename, destination, suffix=""):
+    output_name = basename + suffix
+    output_name = os.path.join(destination, output_name)
+    output_dir = os.path.dirname(output_name)
+
+    return (output_name, output_dir)
+
+def validate_destination(destination):
+    if not os.path.exists(destination):
+        os.makedirs(destination)
 
 # Iterate through all named layers and
 # filter to just those that have a non-default
@@ -71,7 +102,7 @@ def get_layers_with_content(sceneIndex=0):
 def name_for_selection():
     for obj in bpy.context.selected_objects:
         if (obj.type == "MESH"):
-            return obj.name
+            return camel(obj.name)
     return "null"
 
 def select_armatures_for_current_selection():
@@ -81,7 +112,9 @@ def select_armatures_for_current_selection():
             if armature is not None:
                 armature.select = True
 
-def export_selection(filepath):
+# TODO: Rework this method to take an array of objects, rather than
+# assuming that the current selection is correct.
+def export_selection(filepath, include_animations=False, object_types={'ARMATURE','MESH'}):
     bpy.ops.export_scene.fbx(
         filepath=filepath,
         axis_forward='-Z',
@@ -90,8 +123,8 @@ def export_selection(filepath):
         bake_space_transform=True,
         object_types={'ARMATURE','MESH'},
         use_armature_deform_only=True,
-        bake_anim=True,
-        use_anim=True
+        bake_anim=include_animations,
+        use_anim=include_animations
     )
 
 def camel(chars):
@@ -100,7 +133,6 @@ def camel(chars):
 
 def camelFilename(path):
     return camel(os.path.splitext(os.path.basename(path))[0])
-
 
 if __name__ == "__main__":
     main()
