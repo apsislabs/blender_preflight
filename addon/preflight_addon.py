@@ -10,40 +10,50 @@ class Preflight(bpy.types.Panel):
     bl_region_type = "TOOLS"
     bl_label = "Pre-Flight FBX"
     bl_context = "objectmode"
-    bl_category = "Tools"
+    bl_category = "Pre-Flight FBX"
 
     def draw(self, context):
         layout = self.layout
 
         for group_idx, group in enumerate(context.scene.fbx_export_groups):
             self.layout_export_group(group_idx, group, layout, context)
-        
+    
+        layout.operator("preflight.add_export_group", text="Add Export Group", icon="ZOOMIN")
+
         layout.separator()
-        layout.operator("preflight.add_export_group", text="Add Export Group")
+
+        export_row = layout.row()
+        export_row.scale_y = 1.5
+        export_row.operator("preflight.add_export_group", text="Export All", icon="EXPORT")
 
     def layout_export_group(self, group_idx, group, layout, context):
-        box = layout.box()
+        group_box = layout.box()
 
         # Header Row
-        row = box.row()
+        row = group_box.row()
         row.prop(group, "name", text="")
         removeGroupButton = row.operator("preflight.remove_export_group", text="", icon="X")
         removeGroupButton.group_idx = group_idx
 
         # Mesh Collection
+        mesh_column = group_box.column(align=True)
         for mesh_idx, mesh in enumerate(group.mesh_names):
-            self.layout_mesh_row(mesh_idx, group_idx, mesh, box, context)
+            self.layout_mesh_row(mesh_idx, group_idx, mesh, mesh_column, context)
         
         # Add Mesh Button
-        addMeshButton = box.operator("preflight.add_mesh_to_group", text="Add Mesh", icon="PLUS")
+        addMeshButton = mesh_column.operator("preflight.add_mesh_to_group", text="Add Mesh", icon="ZOOMIN")
         addMeshButton.group_idx = group_idx
 
-    def layout_mesh_row(self, mesh_idx, group_idx, mesh, box, context):
-        box_row = box.row(align=True)
-        box_row.prop_search( mesh, "mesh_name", context.scene, "objects", text="", icon="OBJECT_DATA")
+        # Export Options
+        group_box.prop(group, "include_armatures", text="Include Armatures")
+        group_box.prop(group, "include_animations", text="Include Animations")
+
+    def layout_mesh_row(self, mesh_idx, group_idx, mesh, layout, context):
+        mesh_row = layout.row(align=True)
+        mesh_row.prop_search( mesh, "mesh_name", context.scene, "objects", text="", icon="OBJECT_DATA")
 
         # Remove Mesh Button
-        removeMeshButton = box_row.operator("preflight.remove_mesh_from_group", text="", icon="X")
+        removeMeshButton = mesh_row.operator("preflight.remove_mesh_from_group", text="", icon="X")
         removeMeshButton.group_idx = group_idx
         removeMeshButton.object_idx = mesh_idx
 
@@ -56,6 +66,8 @@ class PreflightMeshGroup(bpy.types.PropertyGroup):
 
 class PreflightExportGroup(bpy.types.PropertyGroup):
     name = bpy.props.StringProperty(name="Test Prop", default="Unknown")
+    include_armatures = bpy.props.BoolProperty(name="Include Armatures", default=True)
+    include_animations = bpy.props.BoolProperty(name="Include Animations", default=False)
     mesh_names = bpy.props.CollectionProperty(type=PreflightMeshGroup)
 
 #
