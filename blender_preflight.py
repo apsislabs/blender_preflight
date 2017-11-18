@@ -123,6 +123,7 @@ def export_selection(filepath, include_animations=False, object_types={'ARMATURE
         bake_space_transform=True,
         object_types={'ARMATURE','MESH'},
         use_armature_deform_only=True,
+        use_mesh_modifiers_render=False,
         bake_anim=include_animations,
         use_anim=include_animations
     )
