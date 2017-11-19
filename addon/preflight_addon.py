@@ -19,7 +19,7 @@ class Preflight(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        groups = context.scene.fbx_export_groups
+        groups = context.scene.preflight.fbx_export_groups
 
         # Export Groups
         for group_idx, group in enumerate(groups):
@@ -40,25 +40,40 @@ class Preflight(bpy.types.Panel):
 
         # Header Row
         row = group_box.row()
-        row.prop(group, "name", text="")
-        removeGroupButton = row.operator(
+
+        row.prop(
+            group,
+            "is_collapsed",
+            icon="TRIA_RIGHT" if group.is_collapsed else "TRIA_DOWN",
+            icon_only=True,
+            emboss=False
+        )
+
+        row.label(group.name)
+
+        remove_group_button = row.operator(
             "preflight.remove_export_group", text="", icon="X")
-        removeGroupButton.group_idx = group_idx
+        remove_group_button.group_idx = group_idx
 
-        # Mesh Collection
-        mesh_column = group_box.column(align=True)
-        for mesh_idx, mesh in enumerate(group.obj_names):
-            self.layout_mesh_row(mesh_idx, group_idx,
-                                 mesh, mesh_column, context)
+        if group.is_collapsed is False:
+            group_box.prop(group, "name")
 
-        # Add Mesh Button
-        addMeshButton = mesh_column.operator(
-            "preflight.add_mesh_to_group", text="Add Mesh", icon="ZOOMIN")
-        addMeshButton.group_idx = group_idx
+            # Mesh Collection
+            mesh_column = group_box.column(align=True)
+            for mesh_idx, mesh in enumerate(group.obj_names):
+                self.layout_mesh_row(mesh_idx, group_idx,
+                                     mesh, mesh_column, context)
 
-        # Export Options
-        group_box.prop(group, "include_armatures", text="Include Armatures")
-        group_box.prop(group, "include_animations", text="Include Animations")
+            # Add Mesh Button
+            addMeshButton = mesh_column.operator(
+                "preflight.add_mesh_to_group", text="Add Mesh", icon="ZOOMIN")
+            addMeshButton.group_idx = group_idx
+
+            # Export Options
+            group_box.prop(group, "include_armatures",
+                           text="Include Armatures")
+            group_box.prop(group, "include_animations",
+                           text="Include Animations")
 
     def layout_mesh_row(self, mesh_idx, group_idx, mesh, layout, context):
         mesh_row = layout.row(align=True)
@@ -81,12 +96,20 @@ class PreflightMeshGroup(bpy.types.PropertyGroup):
 
 
 class PreflightExportGroup(bpy.types.PropertyGroup):
-    name = bpy.props.StringProperty(name="Test Prop", default="Unknown")
+    is_collapsed = bpy.props.BoolProperty(name="Collapse Group", default=False)
+    name = bpy.props.StringProperty(name="Export Group Name", default="")
     include_armatures = bpy.props.BoolProperty(
         name="Include Armatures", default=True)
     include_animations = bpy.props.BoolProperty(
         name="Include Animations", default=False)
     obj_names = bpy.props.CollectionProperty(type=PreflightMeshGroup)
+
+
+class PreflightOptionsGroup(bpy.types.PropertyGroup):
+    fbx_export_groups = bpy.props.CollectionProperty(type=PreflightExportGroup)
+    export_animations = bpy.props.BoolProperty(
+        name="Export Animations", default=True)
+
 
 #
 # Operators
@@ -101,7 +124,8 @@ class AddPreflightMeshOperator(bpy.types.Operator):
 
     def execute(self, context):
         if self.group_idx is not None:
-            context.scene.fbx_export_groups[self.group_idx].obj_names.add()
+            context.scene.preflight.fbx_export_groups[self.group_idx].obj_names.add(
+            )
 
         return {'FINISHED'}
 
@@ -115,7 +139,7 @@ class RemovePreflightMeshOperator(bpy.types.Operator):
 
     def execute(self, context):
         if self.group_idx is not None and self.object_idx is not None:
-            context.scene.fbx_export_groups[self.group_idx].obj_names.remove(
+            context.scene.preflight.fbx_export_groups[self.group_idx].obj_names.remove(
                 self.object_idx)
 
         return {'FINISHED'}
@@ -126,7 +150,9 @@ class AddPreflightExportGroupOperator(bpy.types.Operator):
     bl_label = "Add Export Group"
 
     def execute(self, context):
-        context.scene.fbx_export_groups.add()
+        groups = context.scene.preflight.fbx_export_groups
+        new_group = groups.add()
+        new_group.name = "Export Group {0}".format(str(len(groups)))
         return {'FINISHED'}
 
 
@@ -138,7 +164,7 @@ class RemovePreflightExportGroupOperator(bpy.types.Operator):
 
     def execute(self, context):
         if self.group_idx is not None:
-            context.scene.fbx_export_groups.remove(self.group_idx)
+            context.scene.preflight.fbx_export_groups.remove(self.group_idx)
 
         return {'FINISHED'}
 
@@ -276,9 +302,6 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
         # Deselect Objects
         bpy.ops.object.select_all(action='DESELECT')
 
-# This allows you to run the script directly from blenders text editor
-# to test the addon without having to install it.
-
 
 def get_valid_filename(s):
     """
@@ -306,6 +329,7 @@ def register():
 
     bpy.utils.register_class(PreflightMeshGroup)
     bpy.utils.register_class(PreflightExportGroup)
+    bpy.utils.register_class(PreflightOptionsGroup)
 
     bpy.utils.register_class(AddPreflightMeshOperator)
     bpy.utils.register_class(RemovePreflightMeshOperator)
@@ -320,6 +344,7 @@ def unregister():
 
     bpy.utils.unregister_class(PreflightMeshGroup)
     bpy.utils.unregister_class(PreflightExportGroup)
+    bpy.utils.unregister_class(PreflightOptionsGroup)
 
     bpy.utils.unregister_class(AddPreflightMeshOperator)
     bpy.utils.unregister_class(RemovePreflightMeshOperator)
@@ -330,8 +355,8 @@ def unregister():
 
 
 def init():
-    bpy.types.Scene.fbx_export_groups = bpy.props.CollectionProperty(
-        type=PreflightExportGroup)
+    bpy.types.Scene.preflight = bpy.props.PointerProperty(
+        type=PreflightOptionsGroup)
 
 
 if __name__ == "__main__":
