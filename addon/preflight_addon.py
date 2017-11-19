@@ -6,6 +6,7 @@ bl_info = {
 import bpy
 import os
 import re
+import time
 
 LARGE_BUTTON_SCALE_Y = 1.5
 
@@ -22,11 +23,11 @@ class Preflight(bpy.types.Panel):
         groups = context.scene.preflight.fbx_export_groups
 
         # Export Groups
+        layout.operator("preflight.add_export_group",
+                        text="Add Export Group", icon="ZOOMIN")
         for group_idx, group in enumerate(groups):
             self.layout_export_group(group_idx, group, layout, context)
 
-        layout.operator("preflight.add_export_group",
-                        text="Add Export Group", icon="ZOOMIN")
         layout.separator()
 
         # Export Button
@@ -49,27 +50,31 @@ class Preflight(bpy.types.Panel):
             emboss=False
         )
 
-        row.label(group.name)
+        row.prop(group, "name", text="")
 
         remove_group_button = row.operator(
-            "preflight.remove_export_group", text="", icon="X")
+            "preflight.remove_export_group",
+            text="",
+            icon="X"
+        )
+
         remove_group_button.group_idx = group_idx
 
         if group.is_collapsed is False:
-            group_box.prop(group, "name")
-
             # Mesh Collection
+            group_box.label("Objects to Export:")
             mesh_column = group_box.column(align=True)
             for mesh_idx, mesh in enumerate(group.obj_names):
                 self.layout_mesh_row(mesh_idx, group_idx,
                                      mesh, mesh_column, context)
 
             # Add Mesh Button
-            addMeshButton = mesh_column.operator(
-                "preflight.add_mesh_to_group", text="Add Mesh", icon="ZOOMIN")
-            addMeshButton.group_idx = group_idx
+            add_mesh_button = mesh_column.operator(
+                "preflight.add_mesh_to_group", text="Add Object", icon="ZOOMIN")
+            add_mesh_button.group_idx = group_idx
 
             # Export Options
+            group_box.separator()
             group_box.prop(group, "include_armatures",
                            text="Include Armatures")
             group_box.prop(group, "include_animations",
@@ -178,7 +183,7 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
     # in export groups are set.
     @classmethod
     def poll(cls, context):
-        groups = context.scene.fbx_export_groups
+        groups = context.scene.preflight.fbx_export_groups
 
         if len(groups) < 1:
             return False
@@ -197,39 +202,60 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
         # Sanity Check
         if not bpy.data.is_saved:
             self.report({'ERROR'}, "File must be saved before exporting.")
-            return {'CANCELED'}
+            return {'CANCELLED'}
 
         # iterate through groups
-        groups = context.scene.fbx_export_groups
+        groups = context.scene.preflight.fbx_export_groups
+
+        if self.groups_contain_duplicate_names(groups):
+            self.report(
+                {'WARNING'}, "Cannot export with duplicate group names.")
+            return {'CANCELLED'}
 
         if len(groups) < 1:
             self.report(
-                {'ERROR'}, "Must have at least 1 export group to export files.")
-            return {'CANCELED'}
+                {'WARNING'}, "Must have at least 1 export group to export files.")
+            return {'CANCELLED'}
+        
 
         for group_idx, group in enumerate(groups):
-            # Deselect all objects
-            bpy.ops.object.select_all(action='DESELECT')
+            self.export_group(group, context)
+            self.report({'INFO'}, "Exported Group {0} of {1} Successfully.".format(group_idx, len(groups)))
 
-            # Validate that we have objects
-            if len(group.obj_names) < 1:
-                self.report(
-                    {'ERROR'}, "Must have at least 1 mesh to export group.")
-                return {'CANCELED'}
+        bpy.context.window_manager.progress_end()
+        self.report({'INFO'}, "Exported {0} Groups Successfully.".format(len(groups)))
+        return {'FINISHED'}
 
-            # Validate export path
-            export_path = self.export_path_for_group(group)
-            self.ensure_export_path(export_path)
+    def export_group(self, group, context):
+        # Deselect all objects
+        bpy.ops.object.select_all(action='DESELECT')
 
-            # Export files
+        # Validate that we have objects
+        if len(group.obj_names) < 1:
+            self.report(
+                {'WARNING'}, "Must have at least 1 mesh to export group.")
+            return {'CANCELLED'}
+
+        # Validate export path
+        export_path = self.export_path_for_group(group)
+        self.ensure_export_path(export_path)
+
+        # Export files
+        try:
             self.export_objects_by_name(
                 obj_names=group.obj_names,
                 context=context,
                 export_path=export_path,
-                include_animations=group.include_animations
+                include_animations=group.include_animations,
+                include_armatures=group.include_armatures
             )
+        except:
+            self.report({'ERROR'}, "There was an error while exporting: {0}.".format(group.name))
+            return {'CANCELLED'}
 
-        return {'FINISHED'}
+    def groups_contain_duplicate_names(self, groups):
+        group_names = [group.name for group in groups]
+        return len(group_names) != len(set(group_names))
 
     def select_objects_by_name(self, obj_names, scene):
         """
@@ -243,13 +269,21 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
         """
 
         for mesh in obj_names:
-            ob = scene.objects.get(mesh.obj_name)
-            if ob is not None:
-                ob.select = True
+            obj = scene.objects.get(mesh.obj_name)
+            if obj is not None:
+                obj.select = True
             else:
                 self.report(
                     {'ERROR'}, self.error_message_for_obj_name(mesh.obj_name))
                 return {'CANCELLED'}
+
+    def select_armatures_for_object_names(self, obj_names, scene):
+        for mesh in obj_names:
+            obj = scene.objects.get(mesh.obj_name)
+            if (obj.type == "MESH"):
+                armature = obj.find_armature()
+                if armature is not None:
+                    armature.select = True
 
     def error_message_for_obj_name(self, obj_name=""):
         """
@@ -281,9 +315,12 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
 
         return os.path.join(directory, exportname)
 
-    def export_objects_by_name(self, obj_names, context, export_path, include_animations=False, object_types={'ARMATURE', 'MESH'}):
+    def export_objects_by_name(self, obj_names, context, export_path, include_armatures=False, include_animations=False, object_types={'ARMATURE', 'MESH'}):
         # Select Objects
         self.select_objects_by_name(obj_names, context.scene)
+
+        if include_armatures:
+            self.select_armatures_for_object_names(obj_names, context.scene)
 
         # Do Export
         bpy.ops.export_scene.fbx(
