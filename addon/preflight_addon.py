@@ -14,17 +14,21 @@ class Preflight(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
+        groups = context.scene.fbx_export_groups
 
-        for group_idx, group in enumerate(context.scene.fbx_export_groups):
+        # Export Groups
+        for group_idx, group in enumerate(groups):
             self.layout_export_group(group_idx, group, layout, context)
-    
-        layout.operator("preflight.add_export_group", text="Add Export Group", icon="ZOOMIN")
 
+        layout.operator("preflight.add_export_group", text="Add Export Group", icon="ZOOMIN")
         layout.separator()
 
+        # Export Button
         export_row = layout.row()
         export_row.scale_y = 1.5
-        export_row.operator("preflight.add_export_group", text="Export All", icon="EXPORT")
+        # if len(groups) < 1: export_row.enable = False
+
+        exportButton = export_row.operator("preflight.export_groups", text="Export All", icon="EXPORT")
 
     def layout_export_group(self, group_idx, group, layout, context):
         group_box = layout.box()
@@ -37,7 +41,7 @@ class Preflight(bpy.types.Panel):
 
         # Mesh Collection
         mesh_column = group_box.column(align=True)
-        for mesh_idx, mesh in enumerate(group.mesh_names):
+        for mesh_idx, mesh in enumerate(group.obj_names):
             self.layout_mesh_row(mesh_idx, group_idx, mesh, mesh_column, context)
         
         # Add Mesh Button
@@ -50,10 +54,10 @@ class Preflight(bpy.types.Panel):
 
     def layout_mesh_row(self, mesh_idx, group_idx, mesh, layout, context):
         mesh_row = layout.row(align=True)
-        mesh_row.prop_search( mesh, "mesh_name", context.scene, "objects", text="", icon="OBJECT_DATA")
+        mesh_row.prop_search( mesh, "obj_name", context.scene, "objects", text="", icon="OBJECT_DATA")
 
         # Remove Mesh Button
-        removeMeshButton = mesh_row.operator("preflight.remove_mesh_from_group", text="", icon="X")
+        removeMeshButton = mesh_row.operator("preflight.remove_mesh_from_group", text="", icon="ZOOMOUT")
         removeMeshButton.group_idx = group_idx
         removeMeshButton.object_idx = mesh_idx
 
@@ -62,13 +66,13 @@ class Preflight(bpy.types.Panel):
 #
 
 class PreflightMeshGroup(bpy.types.PropertyGroup):
-    mesh_name = bpy.props.StringProperty(name="Mesh Name", default="Unknown")
+    obj_name = bpy.props.StringProperty(name="Mesh Name", default="")
 
 class PreflightExportGroup(bpy.types.PropertyGroup):
     name = bpy.props.StringProperty(name="Test Prop", default="Unknown")
     include_armatures = bpy.props.BoolProperty(name="Include Armatures", default=True)
     include_animations = bpy.props.BoolProperty(name="Include Animations", default=False)
-    mesh_names = bpy.props.CollectionProperty(type=PreflightMeshGroup)
+    obj_names = bpy.props.CollectionProperty(type=PreflightMeshGroup)
 
 #
 # Operators
@@ -82,7 +86,7 @@ class AddPreflightMeshOperator(bpy.types.Operator):
 
     def execute(self, context):
         if self.group_idx is not None:
-            context.scene.fbx_export_groups[self.group_idx].mesh_names.add()
+            context.scene.fbx_export_groups[self.group_idx].obj_names.add()
         
         return {'FINISHED'}
 
@@ -95,9 +99,92 @@ class RemovePreflightMeshOperator(bpy.types.Operator):
 
     def execute(self, context):
         if self.group_idx is not None and self.object_idx is not None:
-            context.scene.fbx_export_groups[self.group_idx].mesh_names.remove(self.object_idx)
+            context.scene.fbx_export_groups[self.group_idx].obj_names.remove(self.object_idx)
         
         return {'FINISHED'}
+
+class ExportMeshGroupsOperator(bpy.types.Operator):
+    bl_idname = "preflight.export_groups"
+    bl_label = "Export Groups"
+
+    # Poll for ability to perform export. Only return
+    # true if there is at least 1 group, and all objects
+    # in export groups are set.
+    @classmethod
+    def poll(cls, context):
+        groups = context.scene.fbx_export_groups
+
+        if len(groups) < 1: return False
+        
+        for group in groups:
+            if len(group.obj_names:
+                if not mesh.obj_name: return False
+        
+        return True
+
+    def execute(self, context):
+        # iterate through groups
+        groups = context.scene.fbx_export_groups
+
+        if len(groups) < 1:
+            self.report({'ERROR'}, "Must have at least 1 export group to export files." )
+            return {'CANCELED'}
+
+        for group_idx, group in enumerate(groups):
+            self.deselect_all()
+
+            if len(group.obj_names) < 1:
+                self.report({'ERROR'}, "Must have at least 1 mesh to export group." )
+                return {'CANCELED'}
+            
+            # select correct items
+            self.select_objects_by_name(group.obj_names, context.scene)
+        # validate export path
+        # export files
+        return {'FINISHED'}
+
+    def deselect_all(self):
+        """Deselect all objects."""
+
+        bpy.ops.object.select_all(action='DESELECT')
+
+    def select_objects_by_name(self, obj_names, scene):
+        """
+        Given an array of object names, select them in the
+        scene. Selection is additive, so sequential calls
+        to this method will result in additional selections.
+
+        Keyword arguments:
+        obj_names   -- the names of the objects to select
+        scene       -- the scene to select in
+        """
+
+        for mesh in obj_names:
+            ob = scene.objects.get(mesh.obj_name)
+            if ob is not None:
+                ob.select = True
+            else:
+                self.report({'ERROR'}, self.error_message_for_obj_name(mesh.obj_name) )
+                return {'CANCELLED'}
+              
+    def error_message_for_obj_name(self, obj_name=""):
+        """
+        Determine the error message for a given object name.
+
+        Keyword arguments:
+        obj_name -- name of the object for error message (default "")
+        """
+
+        if not obj_name:
+            return "Cannot export empty object."
+        else:
+            return 'Object "{0}" could not be found.'.format(obj_name)
+
+    def validate_export_path(self, export_path):
+        return False
+
+    def export_path_for_group(self, group):
+        return False
 
 class AddPreflightExportGroupOperator(bpy.types.Operator):
     bl_idname = "preflight.add_export_group"
@@ -134,6 +221,8 @@ def register():
     bpy.utils.register_class(AddPreflightExportGroupOperator)
     bpy.utils.register_class(RemovePreflightExportGroupOperator)
 
+    bpy.utils.register_class(ExportMeshGroupsOperator)
+
 def unregister():
     bpy.utils.unregister_class(Preflight)
     
@@ -144,6 +233,8 @@ def unregister():
     bpy.utils.unregister_class(RemovePreflightMeshOperator)
     bpy.utils.unregister_class(AddPreflightExportGroupOperator)
     bpy.utils.unregister_class(RemovePreflightExportGroupOperator)
+
+    bpy.utils.unregister_class(ExportMeshGroupsOperator)
 
 def init():
     bpy.types.Scene.fbx_export_groups = bpy.props.CollectionProperty(type=PreflightExportGroup)
