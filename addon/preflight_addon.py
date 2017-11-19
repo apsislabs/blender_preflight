@@ -29,7 +29,7 @@ class Preflight(bpy.types.Panel):
 
         layout.separator()
 
-        layout.prop(context.scene.preflight, "export_location")
+        layout.prop(context.scene.preflight, "export_location", icon="LIBRARY_DATA_DIRECT", text="")
         layout.prop(context.scene.preflight, "export_animations")
 
         layout.separator()
