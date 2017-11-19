@@ -118,7 +118,9 @@ class PreflightExportGroup(bpy.types.PropertyGroup):
 class PreflightOptionsGroup(bpy.types.PropertyGroup):
     fbx_export_groups = bpy.props.CollectionProperty(type=PreflightExportGroup)
     export_animations = bpy.props.BoolProperty(
-        name="Export Animations", default=True)
+        name="Export Animations",
+        description="Include all animations in a separate animations file.",
+        default=True)
     export_location = bpy.props.StringProperty(
         name="Export To",
         description="Choose an export location. Relative location prefixed with '//'.",
@@ -239,9 +241,12 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
                     {'ERROR'}, "There was an error while exporting: {0}.".format(group.name))
                 return {'CANCELLED'}
 
-        bpy.context.window_manager.progress_end()
         self.report(
             {'INFO'}, "Exported {0} Groups Successfully.".format(len(groups)))
+
+        if context.scene.preflight.export_animations:
+            self.export_animations(context)
+
         return {'FINISHED'}
 
     def export_group(self, group, context):
@@ -255,12 +260,13 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
             return {'CANCELLED'}
 
         # Validate export path
-        export_path = self.export_path_for_group(group, context.scene)
+        export_path = self.export_path_for_string(group.name, context.scene)
         self.ensure_export_path(export_path)
 
         # Export files
+        object_names = [g.obj_name for g in group.obj_names]
         self.export_objects_by_name(
-            obj_names=group.obj_names,
+            obj_names=object_names,
             context=context,
             export_path=export_path,
             include_animations=group.include_animations,
@@ -282,18 +288,18 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
         scene       -- the scene to select in
         """
 
-        for mesh in obj_names:
-            obj = scene.objects.get(mesh.obj_name)
+        for name in obj_names:
+            obj = scene.objects.get(name)
             if obj is not None:
                 obj.select = True
             else:
                 self.report(
-                    {'ERROR'}, self.error_message_for_obj_name(mesh.obj_name))
+                    {'ERROR'}, self.error_message_for_obj_name(name))
                 return {'CANCELLED'}
 
     def select_armatures_for_object_names(self, obj_names, scene):
-        for mesh in obj_names:
-            obj = scene.objects.get(mesh.obj_name)
+        for name in obj_names:
+            obj = scene.objects.get(name)
             if (obj.type == "MESH"):
                 armature = obj.find_armature()
                 if armature is not None:
@@ -317,17 +323,22 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
         if not os.path.exists(export_dir):
             os.makedirs(export_dir)
 
-    def export_path_for_group(self, group, scene):
+    def export_path_for_string(self, s, scene, suffix=""):
         """Determine the export path for an export group."""
-        filepath = bpy.data.filepath
-        filename = os.path.splitext(os.path.basename(filepath))[0]
+        filename = self.filename_for_string(s, suffix=suffix)
         directory = bpy.path.abspath(scene.preflight.export_location)
 
-        exportname = "{0}-{1}.fbx".format(to_camelcase(filename),
-                                          to_camelcase(group.name))
-        exportname = get_valid_filename(exportname)
+        return os.path.join(directory, filename)
 
-        return os.path.join(directory, exportname)
+    def filename_for_string(self, s, suffix=""):
+        filepath = bpy.data.filepath
+        filename = os.path.splitext(os.path.basename(filepath))[0]
+
+        return "{0}-{1}{2}.fbx".format(
+            to_camelcase(filename),
+            to_camelcase(s),
+            suffix
+        )
 
     def export_objects_by_name(self, obj_names, context, export_path, include_armatures=False, include_animations=False, object_types={'ARMATURE', 'MESH'}):
         # Select Objects
@@ -353,18 +364,16 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
         # Deselect Objects
         bpy.ops.object.select_all(action='DESELECT')
 
+    def export_animations(self, context):
+        for obj in context.scene.objects:
+            if obj.type != 'ARMATURE':
+                continue
 
-def get_valid_filename(s):
-    """
-    Return the given string converted to a string that can be used for a clean
-    filename. Remove leading and trailing spaces; convert other spaces to
-    underscores; and remove anything that is not an alphanumeric, dash,
-    underscore, or dot.
-    >>> get_valid_filename("john's portrait in 2004.jpg")
-    'johns_portrait_in_2004.jpg'
-    """
-    s = str(s).strip().replace(' ', '_')
-    return re.sub(r'(?u)[^-\w.]', '', s)
+            export_path = self.export_path_for_string(
+                obj.name, context.scene, suffix="@animations")
+            self.ensure_export_path(export_path)
+            self.export_objects_by_name(
+                [obj.name], context, export_path, include_armatures=True, include_animations=True, object_types={'ARMATURE'})
 
 
 def to_camelcase(s):
