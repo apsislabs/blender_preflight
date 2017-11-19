@@ -30,6 +30,11 @@ class Preflight(bpy.types.Panel):
 
         layout.separator()
 
+        layout.prop(context.scene.preflight, "export_location")
+        layout.prop(context.scene.preflight, "export_animations")
+
+        layout.separator()
+
         # Export Button
         export_row = layout.row()
         export_row.scale_y = LARGE_BUTTON_SCALE_Y
@@ -114,6 +119,12 @@ class PreflightOptionsGroup(bpy.types.PropertyGroup):
     fbx_export_groups = bpy.props.CollectionProperty(type=PreflightExportGroup)
     export_animations = bpy.props.BoolProperty(
         name="Export Animations", default=True)
+    export_location = bpy.props.StringProperty(
+        name="Export To",
+        description="Choose an export location. Relative location prefixed with '//'.",
+        default="//preflight",
+        maxlen=1024,
+        subtype='DIR_PATH')
 
 
 #
@@ -216,14 +227,21 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
             self.report(
                 {'WARNING'}, "Must have at least 1 export group to export files.")
             return {'CANCELLED'}
-        
 
         for group_idx, group in enumerate(groups):
-            self.export_group(group, context)
-            self.report({'INFO'}, "Exported Group {0} of {1} Successfully.".format(group_idx, len(groups)))
+            try:
+                self.export_group(group, context)
+                self.report({'INFO'}, "Exported Group {0} of {1} Successfully.".format(
+                    group_idx, len(groups)))
+            except Exception as e:
+                print(e)
+                self.report(
+                    {'ERROR'}, "There was an error while exporting: {0}.".format(group.name))
+                return {'CANCELLED'}
 
         bpy.context.window_manager.progress_end()
-        self.report({'INFO'}, "Exported {0} Groups Successfully.".format(len(groups)))
+        self.report(
+            {'INFO'}, "Exported {0} Groups Successfully.".format(len(groups)))
         return {'FINISHED'}
 
     def export_group(self, group, context):
@@ -237,21 +255,17 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
             return {'CANCELLED'}
 
         # Validate export path
-        export_path = self.export_path_for_group(group)
+        export_path = self.export_path_for_group(group, context.scene)
         self.ensure_export_path(export_path)
 
         # Export files
-        try:
-            self.export_objects_by_name(
-                obj_names=group.obj_names,
-                context=context,
-                export_path=export_path,
-                include_animations=group.include_animations,
-                include_armatures=group.include_armatures
-            )
-        except:
-            self.report({'ERROR'}, "There was an error while exporting: {0}.".format(group.name))
-            return {'CANCELLED'}
+        self.export_objects_by_name(
+            obj_names=group.obj_names,
+            context=context,
+            export_path=export_path,
+            include_animations=group.include_animations,
+            include_armatures=group.include_armatures
+        )
 
     def groups_contain_duplicate_names(self, groups):
         group_names = [group.name for group in groups]
@@ -303,11 +317,11 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
         if not os.path.exists(export_dir):
             os.makedirs(export_dir)
 
-    def export_path_for_group(self, group):
+    def export_path_for_group(self, group, scene):
         """Determine the export path for an export group."""
         filepath = bpy.data.filepath
         filename = os.path.splitext(os.path.basename(filepath))[0]
-        directory = os.path.dirname(filepath)
+        directory = bpy.path.abspath(scene.preflight.export_location)
 
         exportname = "{0}-{1}.fbx".format(to_camelcase(filename),
                                           to_camelcase(group.name))
