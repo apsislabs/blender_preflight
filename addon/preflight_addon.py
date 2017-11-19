@@ -29,7 +29,8 @@ class Preflight(bpy.types.Panel):
 
         layout.separator()
 
-        layout.prop(context.scene.preflight, "export_location", icon="LIBRARY_DATA_DIRECT", text="")
+        layout.prop(context.scene.preflight, "export_location",
+                    icon="LIBRARY_DATA_DIRECT", text="")
         layout.prop(context.scene.preflight, "export_animations")
 
         layout.separator()
@@ -67,7 +68,8 @@ class Preflight(bpy.types.Panel):
 
         if group.is_collapsed is False:
             # Mesh Collection
-            group_box.label("Objects to Export:")
+            group_box.label("Objects to Export:",
+                            icon="OUTLINER_OB_GROUP_INSTANCE")
             mesh_column = group_box.column(align=True)
             for mesh_idx, mesh in enumerate(group.obj_names):
                 self.layout_mesh_row(mesh_idx, group_idx,
@@ -80,10 +82,11 @@ class Preflight(bpy.types.Panel):
 
             # Export Options
             group_box.separator()
-            group_box.prop(group, "include_armatures",
-                           text="Include Armatures")
-            group_box.prop(group, "include_animations",
-                           text="Include Animations")
+            options_column = group_box.column(align=True)
+            options_column.prop(group, "include_armatures",
+                                text="Include Armatures")
+            options_column.prop(group, "include_animations",
+                                text="Include Animations")
 
     def layout_mesh_row(self, mesh_idx, group_idx, mesh, layout, context):
         mesh_row = layout.row(align=True)
