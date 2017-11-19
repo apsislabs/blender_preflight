@@ -4,6 +4,10 @@ bl_info = {
 }
 
 import bpy
+import os
+import re
+
+LARGE_BUTTON_SCALE_Y = 1.5
 
 class Preflight(bpy.types.Panel):
     bl_space_type = "VIEW_3D"
@@ -25,9 +29,7 @@ class Preflight(bpy.types.Panel):
 
         # Export Button
         export_row = layout.row()
-        export_row.scale_y = 1.5
-        # if len(groups) < 1: export_row.enable = False
-
+        export_row.scale_y = LARGE_BUTTON_SCALE_Y
         exportButton = export_row.operator("preflight.export_groups", text="Export All", icon="EXPORT")
 
     def layout_export_group(self, group_idx, group, layout, context):
@@ -103,6 +105,26 @@ class RemovePreflightMeshOperator(bpy.types.Operator):
         
         return {'FINISHED'}
 
+class AddPreflightExportGroupOperator(bpy.types.Operator):
+    bl_idname = "preflight.add_export_group"
+    bl_label = "Add Export Group"
+
+    def execute(self, context):
+        context.scene.fbx_export_groups.add()
+        return {'FINISHED'}
+
+class RemovePreflightExportGroupOperator(bpy.types.Operator):
+    bl_idname = "preflight.remove_export_group"
+    bl_label = "Remove Export Group"
+
+    group_idx = bpy.props.IntProperty()
+
+    def execute(self, context):
+        if self.group_idx is not None:
+            context.scene.fbx_export_groups.remove(self.group_idx)
+
+        return {'FINISHED'}
+
 class ExportMeshGroupsOperator(bpy.types.Operator):
     bl_idname = "preflight.export_groups"
     bl_label = "Export Groups"
@@ -117,12 +139,19 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
         if len(groups) < 1: return False
         
         for group in groups:
-            if len(group.obj_names:
-                if not mesh.obj_name: return False
+            if len(group.obj_names) < 1: return False
+            
+            for obj in group.obj_names:
+                if not obj.obj_name: return False
         
         return True
 
     def execute(self, context):
+        # Sanity Check
+        if not bpy.data.is_saved:
+            self.report({'ERROR'}, "File must be saved before exporting.")
+            return {'CANCELED'}
+
         # iterate through groups
         groups = context.scene.fbx_export_groups
 
@@ -131,22 +160,23 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
             return {'CANCELED'}
 
         for group_idx, group in enumerate(groups):
-            self.deselect_all()
+            # Deselect all objects
+            bpy.ops.object.select_all(action='DESELECT')
 
+            # Validate that we have objects
             if len(group.obj_names) < 1:
                 self.report({'ERROR'}, "Must have at least 1 mesh to export group." )
                 return {'CANCELED'}
             
-            # select correct items
+            # select correct objects
             self.select_objects_by_name(group.obj_names, context.scene)
-        # validate export path
-        # export files
+
+            print(self.export_path_for_group(group))
+
+            # validate export path
+            # export files
+
         return {'FINISHED'}
-
-    def deselect_all(self):
-        """Deselect all objects."""
-
-        bpy.ops.object.select_all(action='DESELECT')
 
     def select_objects_by_name(self, obj_names, scene):
         """
@@ -184,31 +214,37 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
         return False
 
     def export_path_for_group(self, group):
-        return False
+        """Determine the export path for an export group."""
+        filepath = bpy.data.filepath
+        filename = os.path.splitext(os.path.basename(filepath))[0]
+        directory = os.path.dirname(filepath)
 
-class AddPreflightExportGroupOperator(bpy.types.Operator):
-    bl_idname = "preflight.add_export_group"
-    bl_label = "Add Export Group"
+        exportname = "{0}-{1}.fbx".format(to_camelcase(filename), to_camelcase(group.name))
+        exportname = get_valid_filename(exportname)
 
-    def execute(self, context):
-        context.scene.fbx_export_groups.add()
-        return {'FINISHED'}
-
-class RemovePreflightExportGroupOperator(bpy.types.Operator):
-    bl_idname = "preflight.remove_export_group"
-    bl_label = "Remove Export Group"
-
-    group_idx = bpy.props.IntProperty()
-
-    def execute(self, context):
-        if self.group_idx is not None:
-            context.scene.fbx_export_groups.remove(self.group_idx)
-
-        return {'FINISHED'}
-
+        return os.path.join(directory, exportname)
 
 # This allows you to run the script directly from blenders text editor
 # to test the addon without having to install it.
+
+def get_valid_filename(s):
+    """
+    Return the given string converted to a string that can be used for a clean
+    filename. Remove leading and trailing spaces; convert other spaces to
+    underscores; and remove anything that is not an alphanumeric, dash,
+    underscore, or dot.
+    >>> get_valid_filename("john's portrait in 2004.jpg")
+    'johns_portrait_in_2004.jpg'
+    """
+    s = str(s).strip().replace(' ', '_')
+    return re.sub(r'(?u)[^-\w.]', '', s)
+
+def to_camelcase(s):
+    """
+    Return the given string converted to camelcase. Remove all spaces. 
+    """
+    words = re.split("[^a-zA-Z0-9]+", s)
+    return "".join(w.lower() if i is 0 else w.title() for i, w in enumerate(words))
 
 def register():
     bpy.utils.register_class(Preflight)
