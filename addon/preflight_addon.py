@@ -6,7 +6,6 @@ bl_info = {
 import bpy
 import os
 import re
-import time
 
 LARGE_BUTTON_SCALE_Y = 1.5
 
@@ -39,7 +38,8 @@ class Preflight(bpy.types.Panel):
         export_row = layout.row()
         export_row.scale_y = LARGE_BUTTON_SCALE_Y
         exportButton = export_row.operator(
-            "preflight.export_groups", text="Export All", icon="EXPORT")
+            "preflight.export_groups",
+            icon="EXPORT")
 
     def layout_export_group(self, group_idx, group, layout, context):
         group_box = layout.box()
@@ -75,7 +75,7 @@ class Preflight(bpy.types.Panel):
 
             # Add Mesh Button
             add_mesh_button = mesh_column.operator(
-                "preflight.add_mesh_to_group", text="Add Object", icon="ZOOMIN")
+                "preflight.add_object_to_group", text="Add Object", icon="ZOOMIN")
             add_mesh_button.group_idx = group_idx
 
             # Export Options
@@ -92,7 +92,7 @@ class Preflight(bpy.types.Panel):
 
         # Remove Mesh Button
         removeMeshButton = mesh_row.operator(
-            "preflight.remove_mesh_from_group", text="", icon="ZOOMOUT")
+            "preflight.remove_object_from_group", text="", icon="ZOOMOUT")
         removeMeshButton.group_idx = group_idx
         removeMeshButton.object_idx = mesh_idx
 
@@ -102,23 +102,41 @@ class Preflight(bpy.types.Panel):
 
 
 class PreflightMeshGroup(bpy.types.PropertyGroup):
-    obj_name = bpy.props.StringProperty(name="Mesh Name", default="")
+    obj_name = bpy.props.StringProperty(
+        name="Object Name",
+        description="Name of the object to export. Note: If the object name changes, the reference will be lost.",
+        default=""
+    )
 
 
 class PreflightExportGroup(bpy.types.PropertyGroup):
-    is_collapsed = bpy.props.BoolProperty(name="Collapse Group", default=False)
-    name = bpy.props.StringProperty(name="Export Group Name", default="")
+    is_collapsed = bpy.props.BoolProperty(
+        name="Collapse Group",
+        description="Collapse the display of this export group.",
+        default=False
+    )
+    name = bpy.props.StringProperty(
+        name="Export Group Name",
+        description="File name for this export group. Will be converted to camel case. Duplicate names will cause an error.",
+        default=""
+    )
     include_armatures = bpy.props.BoolProperty(
-        name="Include Armatures", default=True)
+        name="Include Armatures",
+        description="Autmatically include armatures for selected objects in this export.",
+        default=True
+    )
     include_animations = bpy.props.BoolProperty(
-        name="Include Animations", default=False)
+        name="Include Animations",
+        description="Include animations along with the armatures in this export group.",
+        default=False
+    )
     obj_names = bpy.props.CollectionProperty(type=PreflightMeshGroup)
 
 
 class PreflightOptionsGroup(bpy.types.PropertyGroup):
     fbx_export_groups = bpy.props.CollectionProperty(type=PreflightExportGroup)
     export_animations = bpy.props.BoolProperty(
-        name="Export Animations",
+        name="Export Animations to Separate File",
         description="Include all animations in a separate animations file.",
         default=True)
     export_location = bpy.props.StringProperty(
@@ -134,9 +152,10 @@ class PreflightOptionsGroup(bpy.types.PropertyGroup):
 #
 
 
-class AddPreflightMeshOperator(bpy.types.Operator):
-    bl_idname = "preflight.add_mesh_to_group"
-    bl_label = "Add Mesh"
+class AddPreflightObjectOperator(bpy.types.Operator):
+    bl_idname = "preflight.add_object_to_group"
+    bl_label = "Add Object"
+    bl_description = "Add an object to this export group."
 
     group_idx = bpy.props.IntProperty()
 
@@ -148,9 +167,10 @@ class AddPreflightMeshOperator(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class RemovePreflightMeshOperator(bpy.types.Operator):
-    bl_idname = "preflight.remove_mesh_from_group"
-    bl_label = "Remove Mesh"
+class RemovePreflightObjectOperator(bpy.types.Operator):
+    bl_idname = "preflight.remove_object_from_group"
+    bl_label = "Remove Object"
+    bl_description = "Remove object from this export group."
 
     group_idx = bpy.props.IntProperty()
     object_idx = bpy.props.IntProperty()
@@ -166,6 +186,7 @@ class RemovePreflightMeshOperator(bpy.types.Operator):
 class AddPreflightExportGroupOperator(bpy.types.Operator):
     bl_idname = "preflight.add_export_group"
     bl_label = "Add Export Group"
+    bl_description = "Add an export group. Each group will be exported to its own .fbx file with all selected objects."
 
     def execute(self, context):
         groups = context.scene.preflight.fbx_export_groups
@@ -177,6 +198,7 @@ class AddPreflightExportGroupOperator(bpy.types.Operator):
 class RemovePreflightExportGroupOperator(bpy.types.Operator):
     bl_idname = "preflight.remove_export_group"
     bl_label = "Remove Export Group"
+    bl_description = "Remove an export group."
 
     group_idx = bpy.props.IntProperty()
 
@@ -189,7 +211,8 @@ class RemovePreflightExportGroupOperator(bpy.types.Operator):
 
 class ExportMeshGroupsOperator(bpy.types.Operator):
     bl_idname = "preflight.export_groups"
-    bl_label = "Export Groups"
+    bl_label = "Export All Groups"
+    bl_description = "Export all export groups to the chosen export destination."
 
     # Poll for ability to perform export. Only return
     # true if there is at least 1 group, and all objects
@@ -250,6 +273,11 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
         return {'FINISHED'}
 
     def export_group(self, group, context):
+        """
+        Export an export group according to its options and
+        included objects.
+        """
+
         # Deselect all objects
         bpy.ops.object.select_all(action='DESELECT')
 
@@ -272,6 +300,22 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
             include_animations=group.include_animations,
             include_armatures=group.include_armatures
         )
+
+    def export_animations(self, context):
+        """
+        Export each armature in the current context with all
+        animations attached.
+        """
+
+        for obj in context.scene.objects:
+            if obj.type != 'ARMATURE':
+                continue
+
+            export_path = self.export_path_for_string(
+                obj.name, context.scene, suffix="@animations")
+            self.ensure_export_path(export_path)
+            self.export_objects_by_name(
+                [obj.name], context, export_path, include_armatures=True, include_animations=True, object_types={'ARMATURE'})
 
     def groups_contain_duplicate_names(self, groups):
         group_names = [group.name for group in groups]
@@ -364,17 +408,6 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
         # Deselect Objects
         bpy.ops.object.select_all(action='DESELECT')
 
-    def export_animations(self, context):
-        for obj in context.scene.objects:
-            if obj.type != 'ARMATURE':
-                continue
-
-            export_path = self.export_path_for_string(
-                obj.name, context.scene, suffix="@animations")
-            self.ensure_export_path(export_path)
-            self.export_objects_by_name(
-                [obj.name], context, export_path, include_armatures=True, include_animations=True, object_types={'ARMATURE'})
-
 
 def to_camelcase(s):
     """
@@ -391,8 +424,8 @@ def register():
     bpy.utils.register_class(PreflightExportGroup)
     bpy.utils.register_class(PreflightOptionsGroup)
 
-    bpy.utils.register_class(AddPreflightMeshOperator)
-    bpy.utils.register_class(RemovePreflightMeshOperator)
+    bpy.utils.register_class(AddPreflightObjectOperator)
+    bpy.utils.register_class(RemovePreflightObjectOperator)
     bpy.utils.register_class(AddPreflightExportGroupOperator)
     bpy.utils.register_class(RemovePreflightExportGroupOperator)
 
@@ -406,8 +439,8 @@ def unregister():
     bpy.utils.unregister_class(PreflightExportGroup)
     bpy.utils.unregister_class(PreflightOptionsGroup)
 
-    bpy.utils.unregister_class(AddPreflightMeshOperator)
-    bpy.utils.unregister_class(RemovePreflightMeshOperator)
+    bpy.utils.unregister_class(AddPreflightObjectOperator)
+    bpy.utils.unregister_class(RemovePreflightObjectOperator)
     bpy.utils.unregister_class(AddPreflightExportGroupOperator)
     bpy.utils.unregister_class(RemovePreflightExportGroupOperator)
 
