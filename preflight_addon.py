@@ -19,7 +19,7 @@ class Preflight(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        groups = context.scene.preflight.fbx_export_groups
+        groups = context.scene.preflight_props.fbx_export_groups
 
         # Export Groups
         layout.operator("preflight.add_export_group",
@@ -29,9 +29,9 @@ class Preflight(bpy.types.Panel):
 
         layout.separator()
 
-        layout.prop(context.scene.preflight, "export_location",
+        layout.prop(context.scene.preflight_props, "export_location",
                     icon="LIBRARY_DATA_DIRECT", text="")
-        layout.prop(context.scene.preflight, "export_animations")
+        layout.prop(context.scene.preflight_props, "export_animations")
 
         layout.separator()
 
@@ -164,7 +164,7 @@ class AddPreflightObjectOperator(bpy.types.Operator):
 
     def execute(self, context):
         if self.group_idx is not None:
-            context.scene.preflight.fbx_export_groups[self.group_idx].obj_names.add(
+            context.scene.preflight_props.fbx_export_groups[self.group_idx].obj_names.add(
             )
 
         return {'FINISHED'}
@@ -180,7 +180,7 @@ class RemovePreflightObjectOperator(bpy.types.Operator):
 
     def execute(self, context):
         if self.group_idx is not None and self.object_idx is not None:
-            context.scene.preflight.fbx_export_groups[self.group_idx].obj_names.remove(
+            context.scene.preflight_props.fbx_export_groups[self.group_idx].obj_names.remove(
                 self.object_idx)
 
         return {'FINISHED'}
@@ -192,7 +192,7 @@ class AddPreflightExportGroupOperator(bpy.types.Operator):
     bl_description = "Add an export group. Each group will be exported to its own .fbx file with all selected objects."
 
     def execute(self, context):
-        groups = context.scene.preflight.fbx_export_groups
+        groups = context.scene.preflight_props.fbx_export_groups
         new_group = groups.add()
         new_group.name = "Export Group {0}".format(str(len(groups)))
         return {'FINISHED'}
@@ -207,7 +207,7 @@ class RemovePreflightExportGroupOperator(bpy.types.Operator):
 
     def execute(self, context):
         if self.group_idx is not None:
-            context.scene.preflight.fbx_export_groups.remove(self.group_idx)
+            context.scene.preflight_props.fbx_export_groups.remove(self.group_idx)
 
         return {'FINISHED'}
 
@@ -222,7 +222,7 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
     # in export groups are set.
     @classmethod
     def poll(cls, context):
-        groups = context.scene.preflight.fbx_export_groups
+        groups = context.scene.preflight_props.fbx_export_groups
 
         if len(groups) < 1:
             return False
@@ -244,7 +244,7 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
             return {'CANCELLED'}
 
         # iterate through groups
-        groups = context.scene.preflight.fbx_export_groups
+        groups = context.scene.preflight_props.fbx_export_groups
 
         if self.groups_contain_duplicate_names(groups):
             self.report(
@@ -270,7 +270,7 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
         self.report(
             {'INFO'}, "Exported {0} Groups Successfully.".format(len(groups)))
 
-        if context.scene.preflight.export_animations:
+        if context.scene.preflight_props.export_animations:
             self.export_animations(context)
 
         return {'FINISHED'}
@@ -451,7 +451,7 @@ def unregister():
 
 
 def init():
-    bpy.types.Scene.preflight = bpy.props.PointerProperty(
+    bpy.types.Scene.preflight_props = bpy.props.PointerProperty(
         type=PreflightOptionsGroup)
 
 
