@@ -1,4 +1,4 @@
 *.blend1
 .DS_Store
-/preflight
+test/preflight
 __pycache__
