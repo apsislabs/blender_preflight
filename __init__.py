@@ -26,6 +26,7 @@ bl_info = {
 }
 
 import bpy
+import addon_utils
 
 from .properties import *
 from .operators import *
@@ -52,6 +53,7 @@ if "bpy" in locals():
 
 def register():
     bpy.utils.register_module(__name__)
+    addon_utils.enable("io_scene_fbx", default_set=True, persistent=True)
     bpy.types.Scene.preflight_props = bpy.props.PointerProperty(
         name="Preflight Properties",
         type=PreflightOptionsGroup
