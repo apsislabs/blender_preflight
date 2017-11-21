@@ -170,8 +170,8 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
         self.export_objects_by_name(
             obj_names=object_names,
             context=context,
-            export_path=export_path,
-            apply_modifiers=group.apply_modifiers,
+            filepath=export_path,
+            use_mesh_modifiers=group.apply_modifiers,
             include_animations=group.include_animations,
             include_armatures=group.include_armatures
         )
@@ -259,30 +259,42 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
             suffix
         )
 
-    def export_objects_by_name(self, obj_names, context, export_path, apply_modifiers=True, include_armatures=False, include_animations=False, object_types={'ARMATURE', 'MESH'}):
+    def export_objects_by_name(self, obj_names, context, filepath, **kwargs):
         # Select Objects
         self.select_objects_by_name(obj_names, context.scene)
 
-        if include_armatures:
+        if kwargs.pop('include_armatures'):
             self.select_armatures_for_object_names(obj_names, context.scene)
 
+        # Change settings for include_animations
+        include_anim = kwargs.pop('include_animations', None)
+        if include_anim is not None:
+            kwargs['bake_anim'] = bool(include_anim)
+            kwargs['use_anim'] = bool(include_anim)
+
         # Do Export
-        bpy.ops.export_scene.fbx(
-            filepath=export_path,
-            axis_forward='-Z',
-            axis_up='Y',
-            use_selection=True,
-            bake_space_transform=True,
-            object_types=object_types,
-            use_armature_deform_only=True,
-            use_mesh_modifiers=apply_modifiers,
-            use_mesh_modifiers_render=False,
-            bake_anim=include_animations,
-            use_anim=include_animations
-        )
+        export_opts = {**defaults_for_unity(), **kwargs}
+        export_opts['filepath'] = filepath
+
+        bpy.ops.export_scene.fbx(**export_opts)
 
         # Deselect Objects
         bpy.ops.object.select_all(action='DESELECT')
+
+
+def defaults_for_unity():
+    return {
+        'axis_forward': '-Z',
+        'axis_up': 'Y',
+        'use_selection': True,
+        'bake_space_transform': True,
+        'object_types': {'ARMATURE', 'MESH'},
+        'use_armature_deform_only': True,
+        'use_mesh_modifiers': True,
+        'use_mesh_modifiers_render': False,
+        'bake_anim': True,
+        'use_anim': True
+    }
 
 
 def to_camelcase(s):
