@@ -95,10 +95,9 @@ class PreflightPanel(bpy.types.Panel):
             # Export Options
             group_box.separator()
             options_column = group_box.column(align=True)
-            options_column.prop(group, "include_armatures",
-                                text="Include Armatures")
-            options_column.prop(group, "include_animations",
-                                text="Include Animations")
+            options_column.prop(group, "include_armatures")
+            options_column.prop(group, "include_animations")
+            options_column.prop(group, "apply_modifiers")
 
     def layout_mesh_row(self, mesh_idx, group_idx, mesh, layout, context):
         mesh_row = layout.row(align=True)

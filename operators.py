@@ -171,6 +171,7 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
             obj_names=object_names,
             context=context,
             export_path=export_path,
+            apply_modifiers=group.apply_modifiers,
             include_animations=group.include_animations,
             include_armatures=group.include_armatures
         )
@@ -258,7 +259,7 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
             suffix
         )
 
-    def export_objects_by_name(self, obj_names, context, export_path, include_armatures=False, include_animations=False, object_types={'ARMATURE', 'MESH'}):
+    def export_objects_by_name(self, obj_names, context, export_path, apply_modifiers=True, include_armatures=False, include_animations=False, object_types={'ARMATURE', 'MESH'}):
         # Select Objects
         self.select_objects_by_name(obj_names, context.scene)
 
@@ -274,6 +275,7 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
             bake_space_transform=True,
             object_types=object_types,
             use_armature_deform_only=True,
+            use_mesh_modifiers=apply_modifiers,
             use_mesh_modifiers_render=False,
             bake_anim=include_animations,
             use_anim=include_animations

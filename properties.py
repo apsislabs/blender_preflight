@@ -58,6 +58,11 @@ class PreflightExportGroup(bpy.types.PropertyGroup):
         description="Include animations along with the armatures in this export group.",
         default=False
     )
+    apply_modifiers = bpy.props.BoolProperty(
+        name="Apply Modifiers",
+        description="Apply modifiers while performing this export.",
+        default=True
+    )
     obj_names = bpy.props.CollectionProperty(type=PreflightMeshGroup)
 
 
