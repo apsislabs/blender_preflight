@@ -64,6 +64,10 @@ class PreflightExportGroup(bpy.types.PropertyGroup):
         default=True
     )
     obj_names = bpy.props.CollectionProperty(type=PreflightMeshGroup)
+    obj_idx = bpy.props.IntProperty(
+        name="Object Index",
+        default=0
+    )
 
 
 class PreflightOptionsGroup(bpy.types.PropertyGroup):
@@ -84,7 +88,6 @@ class PreflightOptionsGroup(bpy.types.PropertyGroup):
 
 def register():
     bpy.utils.register_module(__name__)
-
 
 def unregister():
     bpy.utils.unregister_module(__name__)
