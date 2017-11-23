@@ -32,10 +32,3 @@ class ExportObjectUIList(bpy.types.UIList):
     
     def icon_for_object(self, obj):
         return 'OBJECT_DATAMODE'
-            
-def register():
-    bpy.utils.register_module(__name__)
-
-
-def unregister():
-    bpy.utils.unregister_module(__name__)

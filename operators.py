@@ -303,11 +303,3 @@ def to_camelcase(s):
     """
     words = re.split("[^a-zA-Z0-9]+", s)
     return "".join(w.lower() if i is 0 else w.title() for i, w in enumerate(words))
-
-
-def register():
-    bpy.utils.register_module(__name__)
-
-
-def unregister():
-    bpy.utils.unregister_module(__name__)
