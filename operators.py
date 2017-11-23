@@ -20,10 +20,6 @@ import bpy
 import os
 import re
 
-#
-# Operators
-#
-
 
 class AddPreflightObjectOperator(bpy.types.Operator):
     bl_idname = "preflight.add_object_to_group"
