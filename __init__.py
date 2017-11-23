@@ -31,9 +31,9 @@ import addon_utils
 
 if 'bpy' in locals() and 'PreflightPanel' in locals():
     print("Reload Event Detected...")
-    import imp
+    import importlib
     for m in (properties, operators, ui, preflight):
-        imp.reload(m)
+        importlib.reload(m)
 
 from .properties import PreflightMeshGroup, PreflightExportGroup, PreflightOptionsGroup
 from .operators import AddPreflightObjectOperator, RemovePreflightObjectOperator, AddPreflightExportGroupOperator, RemovePreflightExportGroupOperator, ExportMeshGroupsOperator
