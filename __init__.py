@@ -35,10 +35,10 @@ if 'bpy' in locals() and 'PreflightPanel' in locals():
     for m in (properties, operators, ui, preflight):
         importlib.reload(m)
 
-from .properties import PreflightMeshGroup, PreflightExportGroup, PreflightOptionsGroup
-from .operators import AddPreflightObjectOperator, RemovePreflightObjectOperator, AddPreflightExportGroupOperator, RemovePreflightExportGroupOperator, ExportMeshGroupsOperator
-from .ui import ExportObjectUIList
-from .preflight import PreflightPanel
+from .properties import (PreflightMeshGroup, PreflightExportGroup, PreflightOptionsGroup)
+from .operators import (AddPreflightObjectOperator, RemovePreflightObjectOperator, AddPreflightExportGroupOperator, RemovePreflightExportGroupOperator, ExportMeshGroupsOperator)
+from .ui import (ExportObjectUIList)
+from .preflight import (PreflightPanel)
 
 
 def register():
