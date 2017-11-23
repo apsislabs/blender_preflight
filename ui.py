@@ -22,13 +22,26 @@ class ExportObjectUIList(bpy.types.UIList):
     
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         # We could write some code to decide which icon to use here...
-        custom_icon = self.icon_for_object(obj=item)
-
-        # Make sure your code supports all 3 layout types
-        layout.label(item.obj_name, icon = custom_icon)
-
-        layout.prop_search(item, "obj_name", context.scene,
-                             "objects", text="", icon="OBJECT_DATA")
+        label = self.label_for_object_name(obj_name=item.obj_name)
+        icon = self.icon_for_object_name(obj_name=item.obj_name)
+        layout.label(label, icon = icon)
     
-    def icon_for_object(self, obj):
+    def label_for_object_name(self, obj_name):
+        obj = bpy.data.objects.get(obj_name)
+        
+        if obj is not None: return "{0} ({1})".format(obj.name, obj.type)
+        if obj_name: return "'{0}' not found".format(obj_name)
+        return "(unset)"
+
+    def icon_for_object_name(self, obj_name):
+        obj = bpy.data.objects.get(obj_name)
+        
+        if not obj_name: return "QUESTION"
+        if obj is None: return "ERROR"
+
+        if obj.type == "LAMP": return "LAMP"
+        if obj.type == "ARMATURE": return "ARMATURE_DATA"
+        if obj.type == "MESH": return "MESH_DATA"
+        if obj.type == "CAMERA": return "CAMERA_DATA"
+
         return 'OBJECT_DATAMODE'

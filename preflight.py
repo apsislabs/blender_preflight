@@ -2,6 +2,7 @@ import bpy
 
 LARGE_BUTTON_SCALE_Y = 1.5
 
+
 class PreflightPanel(bpy.types.Panel):
     bl_space_type = "VIEW_3D"
     bl_region_type = "TOOLS"
@@ -16,80 +17,79 @@ class PreflightPanel(bpy.types.Panel):
         # Export Groups
         layout.operator("preflight.add_export_group",
                         text="Add Export Group", icon="ZOOMIN")
+
         for group_idx, group in enumerate(groups):
             self.layout_export_group(group_idx, group, layout, context)
 
         layout.separator()
-
         layout.prop(context.scene.preflight_props, "export_location",
                     icon="LIBRARY_DATA_DIRECT", text="")
         layout.prop(context.scene.preflight_props, "export_animations")
-
         layout.separator()
 
         # Export Button
         export_row = layout.row()
         export_row.scale_y = LARGE_BUTTON_SCALE_Y
         exportButton = export_row.operator(
-            "preflight.export_groups",
-            icon="EXPORT")
+            "preflight.export_groups", icon="EXPORT")
 
     def layout_export_group(self, group_idx, group, layout, context):
         group_box = layout.box()
 
         # Header Row
-        row = group_box.row()
-
-        row.prop(
-            group,
-            "is_collapsed",
-            icon="TRIA_RIGHT" if group.is_collapsed else "TRIA_DOWN",
-            icon_only=True,
-            emboss=False
-        )
-
-        row.prop(group, "name", text="")
-
-        remove_group_button = row.operator(
-            "preflight.remove_export_group",
-            text="",
-            icon="X"
-        )
-
-        remove_group_button.group_idx = group_idx
+        self.layout_header(group_box, group, group_idx)
 
         if group.is_collapsed is False:
             # Mesh Collection
-            group_box.label("Objects to Export:",
-                            icon="OUTLINER_OB_GROUP_INSTANCE")
-            mesh_column = group_box.column(align=True)
-            for mesh_idx, mesh in enumerate(group.obj_names):
-                self.layout_mesh_row(mesh_idx, group_idx,
-                                     mesh, mesh_column, context)
+            self.layout_object_list(group_box, group, group_idx)
 
-            # Add Mesh Button
-            add_mesh_button = mesh_column.operator(
-                "preflight.add_object_to_group", text="Add Object", icon="ZOOMIN")
-            add_mesh_button.group_idx = group_idx
-
-            group_box.template_list(
-                "ExportObjectUIList", "obj_list", group, "obj_names", group, "obj_idx")
+            if group.obj_idx is not None and len(group.obj_names) > group.obj_idx:
+                selected_obj = group.obj_names[group.obj_idx]
+                group_box.prop_search(
+                    selected_obj, "obj_name", context.scene, "objects", text="")
 
             # Export Options
-            group_box.separator()
             options_column = group_box.column(align=True)
             options_column.prop(group, "include_armatures")
             options_column.prop(group, "include_animations")
             options_column.prop(group, "apply_modifiers")
 
-    def layout_mesh_row(self, mesh_idx, group_idx, mesh, layout, context):
-        mesh_row = layout.row(align=True)
-        mesh_row.prop_search(mesh, "obj_name", context.scene,
-                             "objects", text="", icon="OBJECT_DATA")
+    def layout_object_list(self, layout, group, group_idx):
+        obj_list_row = layout.row()
+        obj_list_row.template_list(
+            "ExportObjectUIList", "obj_list", group, "obj_names", group, "obj_idx")
 
-        # Remove Mesh Button
-        removeMeshButton = mesh_row.operator(
+        obj_list_actions_col = obj_list_row.column(align=True)
+
+        add_obj_button = obj_list_actions_col.operator(
+            "preflight.add_object_to_group", text="", icon="ZOOMIN")
+        add_obj_button.group_idx = group_idx
+
+        remove_obj_button = obj_list_actions_col.operator(
             "preflight.remove_object_from_group", text="", icon="ZOOMOUT")
-        removeMeshButton.group_idx = group_idx
-        removeMeshButton.object_idx = mesh_idx
+        remove_obj_button.group_idx = group_idx
+        remove_obj_button.object_idx = group.obj_idx
 
+    def layout_header(self, layout, group, group_idx):
+        header_row = layout.row()
+
+        collapse_icon = "TRIA_RIGHT" if group.is_collapsed else "TRIA_DOWN"
+        header_row.prop(group, "is_collapsed", icon=collapse_icon,
+                        icon_only=True, emboss=False)
+        
+        header_row.alert = not self.is_group_valid(group)
+        header_row.prop(group, "name", text="")
+        header_row.alert = False
+
+        header_row.operator("preflight.remove_export_group",
+                            icon="X", text="", emboss=False).group_idx = group_idx
+
+    def is_group_valid(self, group):
+        if not group.name: return False
+        if len(group.obj_names) < 1: return False
+
+        for obj in group.obj_names:
+            if not obj.obj_name: return False
+            if bpy.data.objects.get(obj.obj_name) is None: return False
+
+        return True

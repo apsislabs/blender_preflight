@@ -74,7 +74,7 @@ class RemovePreflightExportGroupOperator(bpy.types.Operator):
     bl_description = "Remove an export group."
 
     group_idx = bpy.props.IntProperty()
-
+    
     def execute(self, context):
         if self.group_idx is not None:
             context.scene.preflight_props.fbx_export_groups.remove(
