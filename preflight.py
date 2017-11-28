@@ -34,15 +34,20 @@ class PreflightPanel(bpy.types.Panel):
         groups = context.scene.preflight_props.fbx_export_groups
 
         # Export Groups
-        layout.operator("preflight.add_export_group",
-                        text="Add Export Group", icon="ZOOMIN")
+        layout.operator(
+            "preflight.add_export_group",
+            text="Add Export Group",
+            icon="ZOOMIN")
 
         for group_idx, group in enumerate(groups):
             self.layout_export_group(group_idx, group, layout, context)
 
         layout.separator()
-        layout.prop(context.scene.preflight_props, "export_location",
-                    icon="LIBRARY_DATA_DIRECT", text="")
+        layout.prop(
+            context.scene.preflight_props,
+            "export_location",
+            icon="LIBRARY_DATA_DIRECT",
+            text="")
         layout.prop(context.scene.preflight_props, "export_animations")
         layout.separator()
 
@@ -62,10 +67,15 @@ class PreflightPanel(bpy.types.Panel):
             # Mesh Collection
             self.layout_object_list(group_box, group, group_idx)
 
-            if group.obj_idx is not None and len(group.obj_names) > group.obj_idx:
+            if group.obj_idx is not None and len(
+                    group.obj_names) > group.obj_idx:
                 selected_obj = group.obj_names[group.obj_idx]
                 group_box.prop_search(
-                    selected_obj, "obj_name", context.scene, "objects", text="")
+                    selected_obj,
+                    "obj_name",
+                    context.scene,
+                    "objects",
+                    text="")
 
             # Export Options
             options_column = group_box.column(align=True)
@@ -75,8 +85,8 @@ class PreflightPanel(bpy.types.Panel):
 
     def layout_object_list(self, layout, group, group_idx):
         obj_list_row = layout.row()
-        obj_list_row.template_list(
-            "ExportObjectUIList", "obj_list", group, "obj_names", group, "obj_idx")
+        obj_list_row.template_list("ExportObjectUIList", "obj_list", group,
+                                   "obj_names", group, "obj_idx")
 
         obj_list_actions_col = obj_list_row.column(align=True)
 
@@ -93,15 +103,20 @@ class PreflightPanel(bpy.types.Panel):
         header_row = layout.row()
 
         collapse_icon = "TRIA_RIGHT" if group.is_collapsed else "TRIA_DOWN"
-        header_row.prop(group, "is_collapsed", icon=collapse_icon,
-                        icon_only=True, emboss=False)
+        header_row.prop(
+            group,
+            "is_collapsed",
+            icon=collapse_icon,
+            icon_only=True,
+            emboss=False)
 
         header_row.alert = not self.is_group_valid(group)
         header_row.prop(group, "name", text="")
         header_row.alert = False
 
-        header_row.operator("preflight.remove_export_group",
-                            icon="X", text="", emboss=False).group_idx = group_idx
+        header_row.operator(
+            "preflight.remove_export_group", icon="X", text="",
+            emboss=False).group_idx = group_idx
 
     def is_group_valid(self, group):
         if not group.name:
@@ -117,6 +132,7 @@ class PreflightPanel(bpy.types.Panel):
 
         return True
 
+
 class PreflightPreferences(bpy.types.AddonPreferences):
     bl_idname = __package__
 
@@ -125,34 +141,29 @@ class PreflightPreferences(bpy.types.AddonPreferences):
     auto_check_update = bpy.props.BoolProperty(
         name="Auto-check for Update",
         description="If enabled, auto-check for updates using an interval",
-        default=False,
-        )
+        default=False)
     updater_intrval_months = bpy.props.IntProperty(
         name='Months',
         description="Number of months between checking for updates",
         default=0,
-        min=0
-        )
+        min=0)
     updater_intrval_days = bpy.props.IntProperty(
         name='Days',
         description="Number of days between checking for updates",
         default=7,
-        min=0,
-        )
+        min=0)
     updater_intrval_hours = bpy.props.IntProperty(
         name='Hours',
         description="Number of hours between checking for updates",
         default=0,
         min=0,
-        max=23
-        )
+        max=23)
     updater_intrval_minutes = bpy.props.IntProperty(
         name='Minutes',
         description="Number of minutes between checking for updates",
         default=0,
         min=0,
-        max=59
-        )
+        max=59)
 
     def draw(self, context):
         layout = self.layout

@@ -28,9 +28,9 @@ class PreflightMeshGroup(bpy.types.PropertyGroup):
 
     obj_name = bpy.props.StringProperty(
         name="Object Name",
-        description="Name of the object to export. Note: If the object name changes, the reference will be lost.",
-        default=""
-    )
+        description=
+        "Name of the object to export. Note: If the object name changes, the reference will be lost.",
+        default="")
 
 
 class PreflightExportGroup(bpy.types.PropertyGroup):
@@ -39,33 +39,28 @@ class PreflightExportGroup(bpy.types.PropertyGroup):
     is_collapsed = bpy.props.BoolProperty(
         name="Collapse Group",
         description="Collapse the display of this export group.",
-        default=False
-    )
+        default=False)
     name = bpy.props.StringProperty(
         name="Export Group Name",
-        description="File name for this export group. Will be converted to camel case. Duplicate names will cause an error.",
-        default=""
-    )
+        description=
+        "File name for this export group. Will be converted to camel case. Duplicate names will cause an error.",
+        default="")
     include_armatures = bpy.props.BoolProperty(
         name="Include Armatures",
-        description="Autmatically include armatures for selected objects in this export.",
-        default=True
-    )
+        description=
+        "Autmatically include armatures for selected objects in this export.",
+        default=True)
     include_animations = bpy.props.BoolProperty(
         name="Include Animations",
-        description="Include animations along with the armatures in this export group.",
-        default=False
-    )
+        description=
+        "Include animations along with the armatures in this export group.",
+        default=False)
     apply_modifiers = bpy.props.BoolProperty(
         name="Apply Modifiers",
         description="Apply modifiers while performing this export.",
-        default=True
-    )
+        default=True)
     obj_names = bpy.props.CollectionProperty(type=PreflightMeshGroup)
-    obj_idx = bpy.props.IntProperty(
-        name="Object Index",
-        default=0
-    )
+    obj_idx = bpy.props.IntProperty(name="Object Index", default=0)
 
 
 class PreflightOptionsGroup(bpy.types.PropertyGroup):
@@ -78,7 +73,8 @@ class PreflightOptionsGroup(bpy.types.PropertyGroup):
         default=True)
     export_location = bpy.props.StringProperty(
         name="Export To",
-        description="Choose an export location. Relative location prefixed with '//'.",
+        description=
+        "Choose an export location. Relative location prefixed with '//'.",
         default="//preflight",
         maxlen=1024,
         subtype='DIR_PATH')

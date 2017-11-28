@@ -30,8 +30,8 @@ class AddPreflightObjectOperator(bpy.types.Operator):
 
     def execute(self, context):
         if self.group_idx is not None:
-            context.scene.preflight_props.fbx_export_groups[self.group_idx].obj_names.add(
-            )
+            context.scene.preflight_props.fbx_export_groups[
+                self.group_idx].obj_names.add()
 
         return {'FINISHED'}
 
@@ -46,8 +46,8 @@ class RemovePreflightObjectOperator(bpy.types.Operator):
 
     def execute(self, context):
         if self.group_idx is not None and self.object_idx is not None:
-            context.scene.preflight_props.fbx_export_groups[self.group_idx].obj_names.remove(
-                self.object_idx)
+            context.scene.preflight_props.fbx_export_groups[
+                self.group_idx].obj_names.remove(self.object_idx)
 
         return {'FINISHED'}
 
@@ -70,7 +70,7 @@ class RemovePreflightExportGroupOperator(bpy.types.Operator):
     bl_description = "Remove an export group."
 
     group_idx = bpy.props.IntProperty()
-    
+
     def execute(self, context):
         if self.group_idx is not None:
             context.scene.preflight_props.fbx_export_groups.remove(
@@ -114,28 +114,30 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
         groups = context.scene.preflight_props.fbx_export_groups
 
         if self.groups_contain_duplicate_names(groups):
-            self.report(
-                {'WARNING'}, "Cannot export with duplicate group names.")
+            self.report({'WARNING'},
+                        "Cannot export with duplicate group names.")
             return {'CANCELLED'}
 
         if len(groups) < 1:
-            self.report(
-                {'WARNING'}, "Must have at least 1 export group to export files.")
+            self.report({'WARNING'},
+                        "Must have at least 1 export group to export files.")
             return {'CANCELLED'}
 
         for group_idx, group in enumerate(groups):
             try:
                 self.export_group(group, context)
-                self.report({'INFO'}, "Exported Group {0} of {1} Successfully.".format(
-                    group_idx, len(groups)))
+                self.report({'INFO'},
+                            "Exported Group {0} of {1} Successfully.".format(
+                                group_idx, len(groups)))
             except Exception as e:
                 print(e)
-                self.report(
-                    {'ERROR'}, "There was an error while exporting: {0}.".format(group.name))
+                self.report({'ERROR'},
+                            "There was an error while exporting: {0}.".format(
+                                group.name))
                 return {'CANCELLED'}
 
-        self.report(
-            {'INFO'}, "Exported {0} Groups Successfully.".format(len(groups)))
+        self.report({'INFO'}, "Exported {0} Groups Successfully.".format(
+            len(groups)))
 
         if context.scene.preflight_props.export_animations:
             self.export_animations(context)
@@ -153,8 +155,8 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
 
         # Validate that we have objects
         if len(group.obj_names) < 1:
-            self.report(
-                {'WARNING'}, "Must have at least 1 mesh to export group.")
+            self.report({'WARNING'},
+                        "Must have at least 1 mesh to export group.")
             return {'CANCELLED'}
 
         # Validate export path
@@ -169,8 +171,7 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
             filepath=export_path,
             use_mesh_modifiers=group.apply_modifiers,
             include_animations=group.include_animations,
-            include_armatures=group.include_armatures
-        )
+            include_armatures=group.include_armatures)
 
     def export_animations(self, context):
         """
@@ -186,7 +187,12 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
                 obj.name, context.scene, suffix="@animations")
             self.ensure_export_path(export_path)
             self.export_objects_by_name(
-                [obj.name], context, export_path, include_armatures=True, include_animations=True, object_types={'ARMATURE'})
+                [obj.name],
+                context,
+                export_path,
+                include_armatures=True,
+                include_animations=True,
+                object_types={'ARMATURE'})
 
     def groups_contain_duplicate_names(self, groups):
         group_names = [group.name for group in groups]
@@ -208,8 +214,7 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
             if obj is not None:
                 obj.select = True
             else:
-                self.report(
-                    {'ERROR'}, self.error_message_for_obj_name(name))
+                self.report({'ERROR'}, self.error_message_for_obj_name(name))
                 return {'CANCELLED'}
 
     def select_armatures_for_object_names(self, obj_names, scene):
@@ -250,10 +255,7 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
         filename = os.path.splitext(os.path.basename(filepath))[0]
 
         return "{0}-{1}{2}.fbx".format(
-            to_camelcase(filename),
-            to_camelcase(s),
-            suffix
-        )
+            to_camelcase(filename), to_camelcase(s), suffix)
 
     def export_objects_by_name(self, obj_names, context, filepath, **kwargs):
         # Select Objects
@@ -298,4 +300,5 @@ def to_camelcase(s):
     Return the given string converted to camelcase. Remove all spaces. 
     """
     words = re.split("[^a-zA-Z0-9]+", s)
-    return "".join(w.lower() if i is 0 else w.title() for i, w in enumerate(words))
+    return "".join(
+        w.lower() if i is 0 else w.title() for i, w in enumerate(words))

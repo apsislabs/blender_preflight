@@ -38,10 +38,15 @@ if 'bpy' in locals() and 'PreflightPanel' in locals():
     for m in (properties, operators, ui, preflight, addon_updater_ops):
         importlib.reload(m)
 
-from .properties import (PreflightMeshGroup, PreflightExportGroup, PreflightOptionsGroup)
-from .operators import (AddPreflightObjectOperator, RemovePreflightObjectOperator, AddPreflightExportGroupOperator, RemovePreflightExportGroupOperator, ExportMeshGroupsOperator)
+from .properties import (PreflightMeshGroup, PreflightExportGroup,
+                         PreflightOptionsGroup)
+from .operators import (
+    AddPreflightObjectOperator, RemovePreflightObjectOperator,
+    AddPreflightExportGroupOperator, RemovePreflightExportGroupOperator,
+    ExportMeshGroupsOperator)
 from .ui import (ExportObjectUIList)
 from .preflight import (PreflightPanel, PreflightPreferences)
+
 
 def register():
     # register auto updater
@@ -49,7 +54,8 @@ def register():
 
     bpy.utils.register_module(__name__)
     addon_utils.enable("io_scene_fbx", default_set=True, persistent=True)
-    bpy.types.Scene.preflight_props = bpy.props.PointerProperty(type=PreflightOptionsGroup)
+    bpy.types.Scene.preflight_props = bpy.props.PointerProperty(
+        type=PreflightOptionsGroup)
 
 
 def unregister():
