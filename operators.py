@@ -163,9 +163,10 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
         self.ensure_export_path(export_path)
 
         # Export files
-        objects = [context.scene.objects.get(obj.obj_name) for obj in group.obj_names]
+        original_objects = [context.scene.objects.get(obj.obj_name) for obj in group.obj_names]
+        prepared_objects = self.prepare_objects(original_objects, context)
         self.export_objects(
-            objects=objects,
+            objects=prepared_objects,
             filepath=export_path,
             use_mesh_modifiers=group.apply_modifiers,
             include_animations=group.include_animations)
@@ -220,6 +221,17 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
 
         return "{0}-{1}{2}.fbx".format(
             to_camelcase(filename), to_camelcase(s), suffix)
+
+    def prepare_objects(self, objects, context):
+        prepared_objects = []
+
+        for src_obj in objects:
+            new_obj = src_obj.copy()
+            new_obj.data = src_obj.data.copy()
+            context.scene.objects.link(new_obj)
+            prepared_objects.append(new_obj)
+
+        return prepared_objects
 
     def export_objects(self, objects, filepath, **kwargs):
         bpy.ops.object.select_all(action='DESELECT')
