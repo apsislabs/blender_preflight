@@ -45,11 +45,6 @@ class PreflightExportGroup(bpy.types.PropertyGroup):
         description=
         "File name for this export group. Will be converted to camel case. Duplicate names will cause an error.",
         default="")
-    include_armatures = bpy.props.BoolProperty(
-        name="Include Armatures",
-        description=
-        "Autmatically include armatures for selected objects in this export.",
-        default=True)
     include_animations = bpy.props.BoolProperty(
         name="Include Animations",
         description=
