@@ -20,6 +20,8 @@ import bpy
 import os
 import re
 
+from . import helpers
+
 class AddPreflightObjectOperator(bpy.types.Operator):
     bl_idname = "preflight.add_object_to_group"
     bl_label = "Add Object"
@@ -116,7 +118,7 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
         groups = context.scene.preflight_props.fbx_export_groups
 
         # SAFETY CHECK
-        if groups_contain_duplicate_names(groups):
+        if not helpers.groups_are_unique(groups):
             self.report({'WARNING'}, "Cannot export with duplicate group names.")
             return {'CANCELLED'}
 
@@ -146,61 +148,6 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
         # FINISH
         self.report({'INFO'}, "Exported {0} Groups Successfully.".format(len(groups)))
         return {'FINISHED'}
-
-    def export_group(self, group, context):
-        """
-        Export an export group according to its options and
-        included objects.
-        """
-
-        # Deselect all objects
-        bpy.ops.object.select_all(action='DESELECT')
-
-        # Validate that we have objects
-        if len(group.obj_names) < 1:
-            message = "Must have at least 1 mesh to export group."
-            self.report({'WARNING'}, message)
-            raise ValueError(message)
-
-        # Validate export path
-        export_path = export_path_for_string(group.name, context.scene)
-        
-        if not ensure_export_path(export_path):
-            raise ValueError("Invalid Export Path")
-
-        # Export files
-        original_objects = [context.scene.objects.get(obj.obj_name) for obj in group.obj_names]
-        duplicate_objects = self.duplicate_objects(original_objects, context)
-
-        self.prepare_objects(duplicate_objects)
-
-        self.export_objects(
-            objects=duplicate_objects,
-            filepath=export_path,
-            use_mesh_modifiers=group.apply_modifiers,
-            include_animations=group.include_animations)
-
-        self.delete_objects(duplicate_objects)
-
-    def export_animations(self, context):
-        """
-        Export each armature in the current context with all
-        animations attached.
-        """
-
-        for obj in context.scene.objects:
-            if obj.type != 'ARMATURE':
-                continue
-
-            export_path = export_path_for_string(obj.name, context.scene, suffix="@animations")
-            if not ensure_export_path(export_path):
-                raise ValueError("Invalid Export Path")
-
-            self.export_objects(
-                [obj],
-                export_path,
-                include_animations=True,
-                object_types={'ARMATURE'})
 
     def prepare_objects(self, objects):
         self.select_objects(objects)
@@ -257,6 +204,61 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
         # Deselect Objects
         bpy.ops.object.select_all(action='DESELECT')
 
+    def export_group(self, group, context):
+        """
+        Export an export group according to its options and
+        included objects.
+        """
+
+        # Deselect all objects
+        bpy.ops.object.select_all(action='DESELECT')
+
+        # Validate that we have objects
+        if len(group.obj_names) < 1:
+            message = "Must have at least 1 mesh to export group."
+            self.report({'WARNING'}, message)
+            raise ValueError(message)
+
+        # Validate export path
+        export_path = export_path_for_string(group.name, context.scene)
+        
+        if not ensure_export_path(export_path):
+            raise ValueError("Invalid Export Path")
+
+        # Export files
+        original_objects = [context.scene.objects.get(obj.obj_name) for obj in group.obj_names]
+        duplicate_objects = self.duplicate_objects(original_objects, context)
+
+        self.prepare_objects(duplicate_objects)
+
+        self.export_objects(
+            objects=duplicate_objects,
+            filepath=export_path,
+            use_mesh_modifiers=group.apply_modifiers,
+            include_animations=group.include_animations)
+
+        self.delete_objects(duplicate_objects)
+
+    def export_animations(self, context):
+        """
+        Export each armature in the current context with all
+        animations attached.
+        """
+
+        for obj in context.scene.objects:
+            if obj.type != 'ARMATURE':
+                continue
+
+            export_path = export_path_for_string(obj.name, context.scene, suffix="@animations")
+            if not ensure_export_path(export_path):
+                raise ValueError("Invalid Export Path")
+
+            self.export_objects(
+                [obj],
+                export_path,
+                include_animations=True,
+                object_types={'ARMATURE'})
+
 def ensure_export_path(export_path):
     try:
         export_dir = os.path.dirname(export_path)
@@ -266,10 +268,6 @@ def ensure_export_path(export_path):
         return False
 
     return True
-
-def groups_contain_duplicate_names(groups):
-    group_names = [group.name for group in groups]
-    return len(group_names) != len(set(group_names))
 
 def filename_for_string(s, suffix=""):
     """Determine Filename for String"""

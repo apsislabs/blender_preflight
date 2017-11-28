@@ -18,6 +18,7 @@
 
 import bpy
 from . import addon_updater_ops
+from . import helpers
 
 LARGE_BUTTON_SCALE_Y = 1.5
 
@@ -109,27 +110,13 @@ class PreflightPanel(bpy.types.Panel):
             icon_only=True,
             emboss=False)
 
-        header_row.alert = not self.is_group_valid(group)
+        header_row.alert = not helpers.group_is_valid(group)
         header_row.prop(group, "name", text="")
         header_row.alert = False
 
         header_row.operator(
             "preflight.remove_export_group", icon="X", text="",
             emboss=False).group_idx = group_idx
-
-    def is_group_valid(self, group):
-        if not group.name:
-            return False
-        if len(group.obj_names) < 1:
-            return False
-
-        for obj in group.obj_names:
-            if not obj.obj_name:
-                return False
-            if bpy.data.objects.get(obj.obj_name) is None:
-                return False
-
-        return True
 
 
 class PreflightPreferences(bpy.types.AddonPreferences):
