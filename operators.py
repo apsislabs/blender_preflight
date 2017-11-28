@@ -164,12 +164,15 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
 
         # Export files
         original_objects = [context.scene.objects.get(obj.obj_name) for obj in group.obj_names]
-        prepared_objects = self.prepare_objects(original_objects, context)
+        duplicate_objects = self.duplicate_objects(original_objects, context)
+
         self.export_objects(
-            objects=prepared_objects,
+            objects=duplicate_objects,
             filepath=export_path,
             use_mesh_modifiers=group.apply_modifiers,
             include_animations=group.include_animations)
+
+        self.delete_objects(duplicate_objects)
 
     def export_animations(self, context):
         """
@@ -222,20 +225,22 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
         return "{0}-{1}{2}.fbx".format(
             to_camelcase(filename), to_camelcase(s), suffix)
 
-    def prepare_objects(self, objects, context):
-        prepared_objects = []
+    def duplicate_objects(self, objects, context):
+        duplicates = []
 
         for src_obj in objects:
             new_obj = src_obj.copy()
             new_obj.data = src_obj.data.copy()
             context.scene.objects.link(new_obj)
-            prepared_objects.append(new_obj)
+            duplicates.append(new_obj)
 
-        return prepared_objects
+        return duplicates
+
+    def delete_objects(self, objects):
+        self.select_objects(objects)
+        bpy.ops.object.delete()
 
     def export_objects(self, objects, filepath, **kwargs):
-        bpy.ops.object.select_all(action='DESELECT')
-
         self.select_objects(objects)
 
         # Change settings for include_animations
@@ -254,11 +259,14 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
         # Deselect Objects
         bpy.ops.object.select_all(action='DESELECT')
 
-    def select_objects(self, objects):
+    def select_objects(self, objects, append_selection=False):
         """
         Select all objects, raise an error if the object
         does not exist.
         """
+        if not append_selection:
+            bpy.ops.object.select_all(action='DESELECT')
+
         for obj in objects:
             if obj is not None:
                 obj.select = True
