@@ -79,7 +79,6 @@ class PreflightPanel(bpy.types.Panel):
 
             # Export Options
             options_column = group_box.column(align=True)
-            options_column.prop(group, "include_armatures")
             options_column.prop(group, "include_animations")
             options_column.prop(group, "apply_modifiers")
 

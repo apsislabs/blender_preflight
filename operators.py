@@ -199,16 +199,8 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
             self.export_objects(
                 [obj],
                 export_path,
-                include_armatures=True,
                 include_animations=True,
                 object_types={'ARMATURE'})
-
-    def select_armatures_for_object_names(self, objects, scene):
-        for obj in objects:
-            if (obj.type == "MESH"):
-                armature = obj.find_armature()
-                if armature is not None:
-                    armature.select = True
 
     def prepare_objects(self, objects):
         self.select_objects(objects)
@@ -251,7 +243,6 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
         self.select_objects(objects)
 
         # Change settings for include_animations
-        include_armatures = kwargs.pop('include_armatures', None)
         include_anim = kwargs.pop('include_animations', None)
         if include_anim is not None:
             kwargs['bake_anim'] = bool(include_anim)
