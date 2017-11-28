@@ -73,3 +73,4 @@ class PreflightOptionsGroup(bpy.types.PropertyGroup):
         default="//preflight",
         maxlen=1024,
         subtype='DIR_PATH')
+
