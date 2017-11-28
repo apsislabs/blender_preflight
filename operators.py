@@ -155,8 +155,7 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
 
         # Validate that we have objects
         if len(group.obj_names) < 1:
-            self.report({'WARNING'},
-                        "Must have at least 1 mesh to export group.")
+            self.report({'WARNING'}, "Must have at least 1 mesh to export group.")
             return {'CANCELLED'}
 
         # Validate export path
@@ -164,14 +163,12 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
         self.ensure_export_path(export_path)
 
         # Export files
-        object_names = [g.obj_name for g in group.obj_names]
-        self.export_objects_by_name(
-            obj_names=object_names,
-            context=context,
+        objects = [context.scene.objects.get(obj.obj_name) for obj in group.obj_names]
+        self.export_objects(
+            objects=objects,
             filepath=export_path,
             use_mesh_modifiers=group.apply_modifiers,
-            include_animations=group.include_animations,
-            include_armatures=group.include_armatures)
+            include_animations=group.include_animations)
 
     def export_animations(self, context):
         """
@@ -186,9 +183,8 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
             export_path = self.export_path_for_string(
                 obj.name, context.scene, suffix="@animations")
             self.ensure_export_path(export_path)
-            self.export_objects_by_name(
-                [obj.name],
-                context,
+            self.export_objects(
+                [obj],
                 export_path,
                 include_armatures=True,
                 include_animations=True,
@@ -198,25 +194,6 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
         group_names = [group.name for group in groups]
         return len(group_names) != len(set(group_names))
 
-    def select_objects_by_name(self, obj_names, scene):
-        """
-        Given an array of object names, select them in the
-        scene. Selection is additive, so sequential calls
-        to this method will result in additional selections.
-
-        Keyword arguments:
-        obj_names   -- the names of the objects to select
-        scene       -- the scene to select in
-        """
-
-        for name in obj_names:
-            obj = scene.objects.get(name)
-            if obj is not None:
-                obj.select = True
-            else:
-                self.report({'ERROR'}, self.error_message_for_obj_name(name))
-                return {'CANCELLED'}
-
     def select_armatures_for_object_names(self, obj_names, scene):
         for name in obj_names:
             obj = scene.objects.get(name)
@@ -224,19 +201,6 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
                 armature = obj.find_armature()
                 if armature is not None:
                     armature.select = True
-
-    def error_message_for_obj_name(self, obj_name=""):
-        """
-        Determine the error message for a given object name.
-
-        Keyword arguments:
-        obj_name -- name of the object for error message (default "")
-        """
-
-        if not obj_name:
-            return "Cannot export empty object."
-        else:
-            return 'Object "{0}" could not be found.'.format(obj_name)
 
     def ensure_export_path(self, export_path):
         export_dir = os.path.dirname(export_path)
@@ -257,14 +221,13 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
         return "{0}-{1}{2}.fbx".format(
             to_camelcase(filename), to_camelcase(s), suffix)
 
-    def export_objects_by_name(self, obj_names, context, filepath, **kwargs):
-        # Select Objects
-        self.select_objects_by_name(obj_names, context.scene)
+    def export_objects(self, objects, filepath, **kwargs):
+        bpy.ops.object.select_all(action='DESELECT')
 
-        if kwargs.pop('include_armatures'):
-            self.select_armatures_for_object_names(obj_names, context.scene)
+        self.select_objects(objects)
 
         # Change settings for include_animations
+        include_armatures = kwargs.pop('include_armatures', None)
         include_anim = kwargs.pop('include_animations', None)
         if include_anim is not None:
             kwargs['bake_anim'] = bool(include_anim)
@@ -279,6 +242,35 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
         # Deselect Objects
         bpy.ops.object.select_all(action='DESELECT')
 
+    def select_objects(self, objects):
+        """
+        Select all objects, raise an error if the object
+        does not exist.
+        """
+        for obj in objects:
+            if obj is not None:
+                obj.select = True
+            else:
+                message = error_message_for_obj_name(obj.name)
+                self.report({'ERROR'}, message)
+                raise ValueError(message)
+
+        return True
+
+
+
+def error_message_for_obj_name(self, obj_name=""):
+    """
+    Determine the error message for a given object name.
+
+    Keyword arguments:
+    obj_name -- name of the object for error message (default "")
+    """
+
+    if not obj_name:
+        return "Cannot export empty object."
+    else:
+        return 'Object "{0}" could not be found.'.format(obj_name)
 
 def defaults_for_unity():
     return {
