@@ -20,7 +20,6 @@ import bpy
 import os
 import re
 
-
 class AddPreflightObjectOperator(bpy.types.Operator):
     bl_idname = "preflight.add_object_to_group"
     bl_label = "Add Object"
@@ -155,7 +154,8 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
 
         # Validate that we have objects
         if len(group.obj_names) < 1:
-            self.report({'WARNING'}, "Must have at least 1 mesh to export group.")
+            self.report(
+                {'WARNING'}, "Must have at least 1 mesh to export group.")
             return {'CANCELLED'}
 
         # Validate export path
@@ -163,8 +163,11 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
         self.ensure_export_path(export_path)
 
         # Export files
-        original_objects = [context.scene.objects.get(obj.obj_name) for obj in group.obj_names]
+        original_objects = [context.scene.objects.get(
+            obj.obj_name) for obj in group.obj_names]
         duplicate_objects = self.duplicate_objects(original_objects, context)
+
+        self.prepare_objects(duplicate_objects, context)
 
         self.export_objects(
             objects=duplicate_objects,
@@ -225,6 +228,10 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
         return "{0}-{1}{2}.fbx".format(
             to_camelcase(filename), to_camelcase(s), suffix)
 
+    def prepare_objects(self, objects, context):
+        self.select_objects(objects)
+        return bpy.ops.object.transform_apply(location=True, scale=True, rotation=True)
+
     def duplicate_objects(self, objects, context):
         duplicates = []
 
@@ -238,7 +245,7 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
 
     def delete_objects(self, objects):
         self.select_objects(objects)
-        bpy.ops.object.delete()
+        return bpy.ops.object.delete()
 
     def export_objects(self, objects, filepath, **kwargs):
         self.select_objects(objects)
@@ -278,7 +285,6 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
         return True
 
 
-
 def error_message_for_obj_name(self, obj_name=""):
     """
     Determine the error message for a given object name.
@@ -292,19 +298,41 @@ def error_message_for_obj_name(self, obj_name=""):
     else:
         return 'Object "{0}" could not be found.'.format(obj_name)
 
+
 def defaults_for_unity():
-    return {
-        'axis_forward': '-Z',
-        'axis_up': 'Y',
-        'use_selection': True,
-        'bake_space_transform': True,
-        'object_types': {'ARMATURE', 'MESH'},
-        'use_armature_deform_only': True,
-        'use_mesh_modifiers': True,
-        'use_mesh_modifiers_render': False,
-        'bake_anim': True,
-        'use_anim': True
-    }
+    return dict(
+        axis_up='Y',
+        axis_forward='-Z',
+        bake_space_transform=True,
+
+        version='BIN7400',
+        use_selection=True,
+        object_types={'MESH', 'ARMATURE'},
+        use_mesh_modifiers=True,
+        mesh_smooth_type='OFF',
+        use_mesh_edges=False,
+        use_tspace=False,
+        use_custom_props=False,
+        add_leaf_bones=True,
+        primary_bone_axis='Y',
+        secondary_bone_axis='X',
+        use_armature_deform_only=False,
+        bake_anim=True,
+        bake_anim_use_all_bones=True,
+        bake_anim_use_nla_strips=True,
+        bake_anim_use_all_actions=True,
+        bake_anim_step=1.0,
+        bake_anim_simplify_factor=1.0,
+        use_anim=True,
+        use_anim_action_all=True,
+        use_default_take=True,
+        use_anim_optimize=True,
+        anim_optimize_precision=6.0,
+        path_mode='AUTO',
+        embed_textures=False,
+        batch_mode='OFF',
+        use_batch_own_dir=True,
+    )
 
 
 def to_camelcase(s):
