@@ -137,7 +137,7 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
                 return {'CANCELLED'}
 
         # DO ANIMATION EXPORT
-        if context.scene.preflight_props.export_animations:
+        if context.scene.preflight_props.export_options.separate_animations:
             try:
                 self.export_animations(context)
             except Exception as e:
@@ -189,14 +189,8 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
     def export_objects(self, objects, filepath, **kwargs):
         self.select_objects(objects)
 
-        # Change settings for include_animations
-        include_anim = kwargs.pop('include_animations', None)
-        if include_anim is not None:
-            kwargs['bake_anim'] = bool(include_anim)
-            kwargs['use_anim'] = bool(include_anim)
-
         # Do Export
-        export_opts = {**defaults_for_unity(), **kwargs}
+        export_opts = kwargs
         export_opts['filepath'] = filepath
 
         bpy.ops.export_scene.fbx(**export_opts)
@@ -228,15 +222,10 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
         # Export files
         original_objects = [context.scene.objects.get(obj.obj_name) for obj in group.obj_names]
         duplicate_objects = self.duplicate_objects(original_objects, context)
+        export_options = context.scene.preflight_props.export_options.get_options_dict()
 
         self.prepare_objects(duplicate_objects)
-
-        self.export_objects(
-            objects=duplicate_objects,
-            filepath=export_path,
-            use_mesh_modifiers=group.apply_modifiers,
-            include_animations=group.include_animations)
-
+        self.export_objects(duplicate_objects, export_path, **export_options)
         self.delete_objects(duplicate_objects)
 
     def export_animations(self, context):
@@ -244,20 +233,28 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
         Export each armature in the current context with all
         animations attached.
         """
+        export_options = context.scene.preflight_props.export_options.defaults_for_unity(object_types={'ARMATURE'})
+        print(export_options)
 
         for obj in context.scene.objects:
-            if obj.type != 'ARMATURE':
-                continue
-
+            if obj.type != 'ARMATURE': continue
             export_path = export_path_for_string(obj.name, context.scene, suffix="@animations")
-            if not ensure_export_path(export_path):
-                raise ValueError("Invalid Export Path")
+            if not ensure_export_path(export_path): raise ValueError("Invalid Export Path")
+            self.export_objects([obj], export_path, **export_options)
 
-            self.export_objects(
-                [obj],
-                export_path,
-                include_animations=True,
-                object_types={'ARMATURE'})
+class ResetExportOptionsOperator(bpy.types.Operator):
+    bl_idname = "preflight.reset_export_options"
+    bl_label = "Reset Export Options"
+    bl_description = "Reset all export options to default values."
+
+    def execute(self, context):
+        export_options = context.scene.preflight_props.export_options
+        export_options.reset(export_options.defaults_for_unity().items())
+        return {'FINISHED'}
+
+    def invoke(self, context, event):
+        return context.window_manager.invoke_confirm(self, event)
+
 
 def ensure_export_path(export_path):
     try:
@@ -273,12 +270,12 @@ def filename_for_string(s, suffix=""):
     """Determine Filename for String"""
     filepath = bpy.data.filepath
     filename = os.path.splitext(os.path.basename(filepath))[0]
-    return "{0}-{1}{2}.fbx".format(to_camelcase(filename), to_camelcase(s), suffix)
+    return "{0}-{1}{2}.fbx".format(helpers.to_camelcase(filename), helpers.to_camelcase(s), suffix)
 
 def export_path_for_string(s, scene, suffix=""):
     """Determine the export path for an export group."""
     filename = filename_for_string(s, suffix=suffix)
-    directory = bpy.path.abspath(scene.preflight_props.export_location)
+    directory = bpy.path.abspath(scene.preflight_props.export_options.export_location)
     return os.path.join(directory, filename)
 
 def error_message_for_obj_name(obj_name=""):
@@ -293,46 +290,3 @@ def error_message_for_obj_name(obj_name=""):
         return "Cannot export empty object."
     else:
         return 'Object "{0}" could not be found.'.format(obj_name)
-
-def defaults_for_unity():
-    return dict(
-        axis_up='Y',
-        axis_forward='-Z',
-        bake_space_transform=True,
-
-        version='BIN7400',
-        use_selection=True,
-        object_types={'MESH', 'ARMATURE'},
-        use_mesh_modifiers=True,
-        mesh_smooth_type='OFF',
-        use_mesh_edges=False,
-        use_tspace=False,
-        use_custom_props=False,
-        add_leaf_bones=True,
-        primary_bone_axis='Y',
-        secondary_bone_axis='X',
-        use_armature_deform_only=False,
-        bake_anim=True,
-        bake_anim_use_all_bones=True,
-        bake_anim_use_nla_strips=True,
-        bake_anim_use_all_actions=True,
-        bake_anim_step=1.0,
-        bake_anim_simplify_factor=1.0,
-        use_anim=True,
-        use_anim_action_all=True,
-        use_default_take=True,
-        use_anim_optimize=True,
-        anim_optimize_precision=6.0,
-        path_mode='AUTO',
-        embed_textures=False,
-        batch_mode='OFF',
-        use_batch_own_dir=True,
-    )
-
-def to_camelcase(s):
-    """
-    Return the given string converted to camelcase. Remove all spaces. 
-    """
-    words = re.split("[^a-zA-Z0-9]+", s)
-    return "".join(
-        w.lower() if i is 0 else w.title() for i, w in enumerate(words))

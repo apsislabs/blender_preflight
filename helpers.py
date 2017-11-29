@@ -17,6 +17,7 @@
 # ##### END GPL LICENSE BLOCK #####
 
 import bpy
+import re
 
 def group_is_valid(group):
     if not group.name:
@@ -38,3 +39,11 @@ def groups_are_valid(groups):
 def groups_are_unique(groups):
     group_names = [group.name for group in groups]
     return len(group_names) == len(set(group_names))
+
+def to_camelcase(s):
+    """
+    Return the given string converted to camelcase. Remove all spaces. 
+    """
+    words = re.split("[^a-zA-Z0-9]+", s)
+    return "".join(
+        w.lower() if i is 0 else w.title() for i, w in enumerate(words))

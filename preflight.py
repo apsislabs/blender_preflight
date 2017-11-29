@@ -44,19 +44,12 @@ class PreflightPanel(bpy.types.Panel):
             self.layout_export_group(group_idx, group, layout, context)
 
         layout.separator()
-        layout.prop(
-            context.scene.preflight_props,
-            "export_location",
-            icon="LIBRARY_DATA_DIRECT",
-            text="")
-        layout.prop(context.scene.preflight_props, "export_animations")
-        layout.separator()
 
         # Export Button
         export_row = layout.row()
         export_row.scale_y = LARGE_BUTTON_SCALE_Y
-        exportButton = export_row.operator(
-            "preflight.export_groups", icon="EXPORT")
+        exportButton = export_row.operator("preflight.export_groups", icon="EXPORT")
+        layout.separator()
 
     def layout_export_group(self, group_idx, group, layout, context):
         group_box = layout.box()
@@ -156,3 +149,33 @@ class PreflightPreferences(bpy.types.AddonPreferences):
 
         # updater draw function
         addon_updater_ops.update_settings_ui(self, context)
+
+
+class PreflightExportOptionsPanel(bpy.types.Panel):
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "TOOLS"
+    bl_label = "Export Options"
+    bl_context = "objectmode"
+    bl_category = "Pre-Flight FBX"
+
+    def draw(self, context):
+        layout = self.layout
+        export_options = context.scene.preflight_props.export_options
+
+        layout.label("Export Location", icon="LIBRARY_DATA_DIRECT")
+        layout.prop(export_options, "export_location", text="")
+        layout.separator()
+        layout.label("Export Types", icon="EXPORT")
+        layout.prop(export_options, "object_types")
+        layout.separator()
+        layout.prop(export_options, "axis_up")
+        layout.prop(export_options, "axis_forward")
+        layout.separator()
+        layout.label("Animation Options", icon="ARMATURE_DATA")
+        layout.prop(export_options, "bake_anim_step")
+        layout.prop(export_options, "bake_anim_simplify_factor")
+        layout.prop(export_options, "use_anim")
+        layout.prop(export_options, "separate_animations")
+        layout.separator()
+        layout.operator("preflight.reset_export_options")
+
