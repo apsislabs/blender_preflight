@@ -116,15 +116,14 @@ class PreflightExportOptionsGroup(bpy.types.PropertyGroup):
             if hasattr(self, key):
                 setattr(self, key, value)
 
-    def defaults_for_unity(self):
-        return dict(
+    def defaults_for_unity(self, **overrides):
+        defaults = dict(
+            version='BIN7400',
             axis_up='Y',
             axis_forward='-Z',
             bake_space_transform=True,
-
-            version='BIN7400',
             use_selection=True,
-            object_types={'MESH', 'ARMATURE'},
+            object_types={'MESH', 'ARMATURE', 'EMPTY', 'OTHER'},
             use_mesh_modifiers=True,
             mesh_smooth_type='OFF',
             use_mesh_edges=False,
@@ -151,9 +150,11 @@ class PreflightExportOptionsGroup(bpy.types.PropertyGroup):
             use_batch_own_dir=True,
         )
 
-    def get_options_dict(self):
+        return {**defaults, **overrides}
+
+    def get_options_dict(self, **overrides):
         """return all options, filtered to valid selections"""
-        opts = {**self.defaults_for_unity(), **self.as_dict()}
+        opts = {**self.defaults_for_unity(), **self.as_dict(), **overrides}
         return dict((k, opts[k]) for k in self.allowed_keys if k in opts)
 
     # Axis Properties

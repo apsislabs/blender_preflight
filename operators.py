@@ -233,8 +233,8 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
         Export each armature in the current context with all
         animations attached.
         """
-        export_options = context.scene.preflight_props.export_options.defaults_for_unity()
-        export_options["object_types"] = {'ARMATURE'}
+        export_options = context.scene.preflight_props.export_options.defaults_for_unity(object_types={'ARMATURE'})
+        print(export_options)
 
         for obj in context.scene.objects:
             if obj.type != 'ARMATURE': continue
