@@ -60,8 +60,7 @@ def register():
 
     bpy.utils.register_module(__name__)
     addon_utils.enable("io_scene_fbx", default_set=True, persistent=True)
-    bpy.types.Scene.preflight_props = bpy.props.PointerProperty(
-        type=PreflightOptionsGroup)
+    bpy.types.Scene.preflight_props = bpy.props.PointerProperty(type=PreflightOptionsGroup)
 
 
 def unregister():

@@ -137,7 +137,7 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
                 return {'CANCELLED'}
 
         # DO ANIMATION EXPORT
-        if context.scene.preflight_props.export_animations:
+        if context.scene.preflight_props.export_options.separate_animations:
             try:
                 self.export_animations(context)
             except Exception as e:
@@ -273,12 +273,12 @@ def filename_for_string(s, suffix=""):
     """Determine Filename for String"""
     filepath = bpy.data.filepath
     filename = os.path.splitext(os.path.basename(filepath))[0]
-    return "{0}-{1}{2}.fbx".format(to_camelcase(filename), to_camelcase(s), suffix)
+    return "{0}-{1}{2}.fbx".format(helpers.to_camelcase(filename), helpers.to_camelcase(s), suffix)
 
 def export_path_for_string(s, scene, suffix=""):
     """Determine the export path for an export group."""
     filename = filename_for_string(s, suffix=suffix)
-    directory = bpy.path.abspath(scene.preflight_props.export_location)
+    directory = bpy.path.abspath(scene.preflight_props.export_options.export_location)
     return os.path.join(directory, filename)
 
 def error_message_for_obj_name(obj_name=""):
@@ -328,11 +328,3 @@ def defaults_for_unity():
         batch_mode='OFF',
         use_batch_own_dir=True,
     )
-
-def to_camelcase(s):
-    """
-    Return the given string converted to camelcase. Remove all spaces. 
-    """
-    words = re.split("[^a-zA-Z0-9]+", s)
-    return "".join(
-        w.lower() if i is 0 else w.title() for i, w in enumerate(words))
