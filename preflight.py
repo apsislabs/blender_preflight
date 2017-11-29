@@ -176,4 +176,6 @@ class PreflightExportOptionsPanel(bpy.types.Panel):
         layout.prop(export_options, "bake_anim_simplify_factor")
         layout.prop(export_options, "use_anim")
         layout.prop(export_options, "separate_animations")
+        layout.separator()
+        layout.operator("preflight.reset_export_options")
 

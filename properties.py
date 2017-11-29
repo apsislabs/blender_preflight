@@ -59,39 +59,38 @@ class PreflightExportGroup(bpy.types.PropertyGroup):
 
 
 class PreflightExportOptionsGroup(bpy.types.PropertyGroup):
-    # dict(
-    #     axis_up='Y',
-    #     axis_forward='-Z',
-    #     bake_space_transform=True,
-
-    #     version='BIN7400',
-    #     use_selection=True,
-    #     object_types={'MESH', 'ARMATURE'},
-    #     use_mesh_modifiers=True,
-    #     mesh_smooth_type='OFF',
-    #     use_mesh_edges=False,
-    #     use_tspace=False,
-    #     use_custom_props=False,
-    #     add_leaf_bones=True,
-    #     primary_bone_axis='Y',
-    #     secondary_bone_axis='X',
-    #     use_armature_deform_only=False,
-    #     bake_anim=True,
-    #     bake_anim_use_all_bones=True,
-    #     bake_anim_use_nla_strips=True,
-    #     bake_anim_use_all_actions=True,
-    #     bake_anim_step=1.0,
-    #     bake_anim_simplify_factor=1.0,
-    #     use_anim=True,
-    #     use_anim_action_all=True,
-    #     use_default_take=True,
-    #     use_anim_optimize=True,
-    #     anim_optimize_precision=6.0,
-    #     path_mode='AUTO',
-    #     embed_textures=False,
-    #     batch_mode='OFF',
-    #     use_batch_own_dir=True,
-    # )
+    allowed_keys = [
+        "axis_up",
+        "axis_forward",
+        "bake_space_transform",
+        "version",
+        "use_selection",
+        "object_types",
+        "use_mesh_modifiers",
+        "mesh_smooth_type",
+        "use_mesh_edges",
+        "use_tspace",
+        "use_custom_props",
+        "add_leaf_bones",
+        "primary_bone_axis",
+        "secondary_bone_axis",
+        "use_armature_deform_only",
+        "bake_anim",
+        "bake_anim_use_all_bones",
+        "bake_anim_use_nla_strips",
+        "bake_anim_use_all_actions",
+        "bake_anim_step",
+        "bake_anim_simplify_factor",
+        "use_anim",
+        "use_anim_action_all",
+        "use_default_take",
+        "use_anim_optimize",
+        "anim_optimize_precision",
+        "path_mode",
+        "embed_textures",
+        "batch_mode",
+        "use_batch_own_dir",
+    ]
 
     axis_enum = [
         ('X', 'X Axis', ''),
@@ -108,6 +107,54 @@ class PreflightExportOptionsGroup(bpy.types.PropertyGroup):
         ('EMPTY', "Empty", ""),
         ('OTHER', "Other", "Other geometry types, like curve, metaball, etc. (converted to meshes)")
     ]
+
+    def as_dict(self):
+        return {key: getattr(self, key) for key in dict(self).keys()}
+
+    def reset(self, options):
+        for key, value in options:
+            if hasattr(self, key):
+                setattr(self, key, value)
+
+    def defaults_for_unity(self):
+        return dict(
+            axis_up='Y',
+            axis_forward='-Z',
+            bake_space_transform=True,
+
+            version='BIN7400',
+            use_selection=True,
+            object_types={'MESH', 'ARMATURE'},
+            use_mesh_modifiers=True,
+            mesh_smooth_type='OFF',
+            use_mesh_edges=False,
+            use_tspace=False,
+            use_custom_props=False,
+            add_leaf_bones=True,
+            primary_bone_axis='Y',
+            secondary_bone_axis='X',
+            use_armature_deform_only=False,
+            bake_anim=True,
+            bake_anim_use_all_bones=True,
+            bake_anim_use_nla_strips=True,
+            bake_anim_use_all_actions=True,
+            bake_anim_step=1.0,
+            bake_anim_simplify_factor=1.0,
+            use_anim=True,
+            use_anim_action_all=True,
+            use_default_take=True,
+            use_anim_optimize=True,
+            anim_optimize_precision=6.0,
+            path_mode='AUTO',
+            embed_textures=False,
+            batch_mode='OFF',
+            use_batch_own_dir=True,
+        )
+
+    def get_options_dict(self):
+        """return all options, filtered to valid selections"""
+        opts = {**self.defaults_for_unity(), **self.as_dict()}
+        return dict((k, opts[k]) for k in self.allowed_keys if k in opts)
 
     # Axis Properties
     object_types = bpy.props.EnumProperty(name="Object Types", items=object_types_enum, default={'ARMATURE', 'MESH', 'EMPTY', 'OTHER'}, options={'ENUM_FLAG'})
