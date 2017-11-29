@@ -222,7 +222,10 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
         # Export files
         original_objects = [context.scene.objects.get(obj.obj_name) for obj in group.obj_names]
         duplicate_objects = self.duplicate_objects(original_objects, context)
-        export_options = context.scene.preflight_props.export_options.get_options_dict()
+        export_options = context.scene.preflight_props.export_options.get_options_dict(
+            use_anim=group.include_animations,
+            use_mesh_modifiers=group.apply_modifiers
+        )
 
         self.prepare_objects(duplicate_objects)
         self.export_objects(duplicate_objects, export_path, **export_options)
