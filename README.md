@@ -18,3 +18,11 @@ This script also accepts two arguments:
 ```
 
 These arguments will temporarily override the settings inside the `.blend` file for all export groups, but will not change the data stored in the `.blend` file permanently.
+
+---
+
+# Built by Apsis
+
+[![apsis](https://s3-us-west-2.amazonaws.com/apsiscdn/apsis.png)](https://www.apsis.io)
+
+`fbx_preflight` was built by Apsis Labs. We love sharing what we build! Check out our [other libraries on Github](https://github.com/apsislabs), and if you like our work you can [hire us](https://www.apsis.io/work-with-us/) to build your vision.
