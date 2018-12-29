@@ -209,6 +209,8 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
         Export an export group according to its options and
         included objects.
         """
+        if group is None:
+            raise ValueError("No Group Provided")
 
         # Deselect all objects
         bpy.ops.object.select_all(action='DESELECT')

@@ -44,8 +44,8 @@ class ExportObjectUIList(bpy.types.UIList):
         if obj is None:
             return "ERROR"
 
-        if obj.type == "LAMP":
-            return "LAMP"
+        if obj.type == "LIGHT":
+            return "LIGHT"
         if obj.type == "ARMATURE":
             return "ARMATURE_DATA"
         if obj.type == "MESH":
