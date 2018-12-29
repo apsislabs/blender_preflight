@@ -17,28 +17,25 @@
 # ##### END GPL LICENSE BLOCK #####
 
 import bpy
-from . import addon_updater_ops
 from . import helpers
 
 LARGE_BUTTON_SCALE_Y = 1.5
 
 
-class PreflightPanel(bpy.types.Panel):
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "TOOLS"
-    bl_label = "Pre-Flight FBX"
-    bl_context = "objectmode"
-    bl_category = "Pre-Flight FBX"
+class PF_PT_preflight_panel(bpy.types.Panel):
+    bl_idname = "PF_PT_preflight_panel"
+    bl_label = "FBX Preflight"
+    bl_space_type = 'PROPERTIES'
+    bl_region_type = 'WINDOW'
+    bl_context = "scene"
 
     def draw(self, context):
         layout = self.layout
+        layout.use_property_split
         groups = context.scene.preflight_props.fbx_export_groups
 
-        # Export Groups
-        layout.operator(
-            "preflight.add_export_group",
-            text="Add Export Group",
-            icon="ZOOMIN")
+        layout.operator("preflight.add_export_group",
+                        text="Add Export Group", icon="ADD")
 
         for group_idx, group in enumerate(groups):
             self.layout_export_group(group_idx, group, layout, context)
@@ -48,7 +45,7 @@ class PreflightPanel(bpy.types.Panel):
         # Export Button
         export_row = layout.row()
         export_row.scale_y = LARGE_BUTTON_SCALE_Y
-        exportButton = export_row.operator("preflight.export_groups", icon="EXPORT")
+        export_row.operator("preflight.export_groups", icon="EXPORT")
         layout.separator()
 
     def layout_export_group(self, group_idx, group, layout, context):
@@ -84,11 +81,11 @@ class PreflightPanel(bpy.types.Panel):
         obj_list_actions_col = obj_list_row.column(align=True)
 
         add_obj_button = obj_list_actions_col.operator(
-            "preflight.add_object_to_group", text="", icon="ZOOMIN")
+            "preflight.add_object_to_group", text="", icon="ADD")
         add_obj_button.group_idx = group_idx
 
         remove_obj_button = obj_list_actions_col.operator(
-            "preflight.remove_object_from_group", text="", icon="ZOOMOUT")
+            "preflight.remove_object_from_group", text="", icon="REMOVE")
         remove_obj_button.group_idx = group_idx
         remove_obj_button.object_idx = group.obj_idx
 
@@ -117,27 +114,27 @@ class PreflightPreferences(bpy.types.AddonPreferences):
 
     # addon updater preferences
 
-    auto_check_update = bpy.props.BoolProperty(
+    auto_check_update: bpy.props.BoolProperty(
         name="Auto-check for Update",
         description="If enabled, auto-check for updates using an interval",
         default=False)
-    updater_intrval_months = bpy.props.IntProperty(
+    updater_intrval_months: bpy.props.IntProperty(
         name='Months',
         description="Number of months between checking for updates",
         default=0,
         min=0)
-    updater_intrval_days = bpy.props.IntProperty(
+    updater_intrval_days: bpy.props.IntProperty(
         name='Days',
         description="Number of days between checking for updates",
         default=7,
         min=0)
-    updater_intrval_hours = bpy.props.IntProperty(
+    updater_intrval_hours: bpy.props.IntProperty(
         name='Hours',
         description="Number of hours between checking for updates",
         default=0,
         min=0,
         max=23)
-    updater_intrval_minutes = bpy.props.IntProperty(
+    updater_intrval_minutes: bpy.props.IntProperty(
         name='Minutes',
         description="Number of minutes between checking for updates",
         default=0,
@@ -151,31 +148,31 @@ class PreflightPreferences(bpy.types.AddonPreferences):
         addon_updater_ops.update_settings_ui(self, context)
 
 
-class PreflightExportOptionsPanel(bpy.types.Panel):
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "TOOLS"
+class PF_PT_preflight_export_options_panel(bpy.types.Panel):
     bl_label = "Export Options"
-    bl_context = "objectmode"
-    bl_category = "Pre-Flight FBX"
+
+    bl_space_type = 'PROPERTIES'
+    bl_region_type = 'WINDOW'
+    bl_context = "scene"
+    bl_parent_id = "PF_PT_preflight_panel"
+    bl_options = {'DEFAULT_CLOSED'}
 
     def draw(self, context):
         layout = self.layout
         export_options = context.scene.preflight_props.export_options
 
-        layout.label("Export Location", icon="LIBRARY_DATA_DIRECT")
+        layout.label(text="Export Location", icon="LIBRARY_DATA_DIRECT")
         layout.prop(export_options, "export_location", text="")
         layout.separator()
-        layout.label("Export Types", icon="EXPORT")
+        layout.label(text="Export Types", icon="EXPORT")
         layout.prop(export_options, "object_types")
         layout.separator()
         layout.prop(export_options, "axis_up")
         layout.prop(export_options, "axis_forward")
         layout.separator()
-        layout.label("Animation Options", icon="ARMATURE_DATA")
+        layout.label(text="Animation Options", icon="ARMATURE_DATA")
         layout.prop(export_options, "bake_anim_step")
         layout.prop(export_options, "bake_anim_simplify_factor")
-        layout.prop(export_options, "use_anim")
         layout.prop(export_options, "separate_animations")
         layout.separator()
         layout.operator("preflight.reset_export_options")
-
