@@ -23,6 +23,36 @@ import re
 from . import helpers
 
 
+def redraw_properties():
+    for area in bpy.context.screen.areas:
+        if area.type == 'PROPERTIES':
+            area.tag_redraw()
+
+
+class AddSelectionToPreflightGroup(bpy.types.Operator):
+    bl_idname = "preflight.add_selection_to_group"
+    bl_label = "Add Selection"
+    bl_description = "Add Selection to an export group"
+
+    group_idx: bpy.props.IntProperty()
+
+    def execute(self, context):
+        if self.group_idx is not None:
+            for idx, obj in enumerate(context.selected_objects):
+                group_names = context.scene.preflight_props.fbx_export_groups[
+                    self.group_idx].obj_names
+                item = group_names.add()
+                item.obj_name = obj.name
+
+            redraw_properties()
+        else:
+            message = 'Group Index is not Set'
+            self.report({'ERROR'}, message)
+            raise ValueError(message)
+
+        return {'FINISHED'}
+
+
 class AddPreflightObjectOperator(bpy.types.Operator):
     bl_idname = "preflight.add_object_to_group"
     bl_label = "Add Object"
@@ -34,6 +64,7 @@ class AddPreflightObjectOperator(bpy.types.Operator):
         if self.group_idx is not None:
             context.scene.preflight_props.fbx_export_groups[
                 self.group_idx].obj_names.add()
+            redraw_properties()
 
         return {'FINISHED'}
 
@@ -50,6 +81,7 @@ class RemovePreflightObjectOperator(bpy.types.Operator):
         if self.group_idx is not None and self.object_idx is not None:
             context.scene.preflight_props.fbx_export_groups[
                 self.group_idx].obj_names.remove(self.object_idx)
+            redraw_properties()
 
         return {'FINISHED'}
 
@@ -63,6 +95,7 @@ class AddPreflightExportGroupOperator(bpy.types.Operator):
         groups = context.scene.preflight_props.fbx_export_groups
         new_group = groups.add()
         new_group.name = "Export Group {0}".format(str(len(groups)))
+        redraw_properties()
         return {'FINISHED'}
 
 
@@ -77,6 +110,7 @@ class RemovePreflightExportGroupOperator(bpy.types.Operator):
         if self.group_idx is not None:
             context.scene.preflight_props.fbx_export_groups.remove(
                 self.group_idx)
+            redraw_properties()
 
         return {'FINISHED'}
 

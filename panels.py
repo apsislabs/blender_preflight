@@ -65,8 +65,7 @@ class PF_PT_preflight_panel(bpy.types.Panel):
                     selected_obj,
                     "obj_name",
                     context.scene,
-                    "objects",
-                    text="")
+                    'objects')
 
             # Export Options
             options_column = group_box.column(align=True)
@@ -107,45 +106,6 @@ class PF_PT_preflight_panel(bpy.types.Panel):
         header_row.operator(
             "preflight.remove_export_group", icon="X", text="",
             emboss=False).group_idx = group_idx
-
-
-class PreflightPreferences(bpy.types.AddonPreferences):
-    bl_idname = __package__
-
-    # addon updater preferences
-
-    auto_check_update: bpy.props.BoolProperty(
-        name="Auto-check for Update",
-        description="If enabled, auto-check for updates using an interval",
-        default=False)
-    updater_intrval_months: bpy.props.IntProperty(
-        name='Months',
-        description="Number of months between checking for updates",
-        default=0,
-        min=0)
-    updater_intrval_days: bpy.props.IntProperty(
-        name='Days',
-        description="Number of days between checking for updates",
-        default=7,
-        min=0)
-    updater_intrval_hours: bpy.props.IntProperty(
-        name='Hours',
-        description="Number of hours between checking for updates",
-        default=0,
-        min=0,
-        max=23)
-    updater_intrval_minutes: bpy.props.IntProperty(
-        name='Minutes',
-        description="Number of minutes between checking for updates",
-        default=0,
-        min=0,
-        max=59)
-
-    def draw(self, context):
-        layout = self.layout
-
-        # updater draw function
-        addon_updater_ops.update_settings_ui(self, context)
 
 
 class PF_PT_preflight_export_options_panel(bpy.types.Panel):
