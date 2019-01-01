@@ -33,7 +33,8 @@ from . operators import (
     AddPreflightExportGroupOperator,
     RemovePreflightExportGroupOperator,
     ExportMeshGroupsOperator,
-    ResetExportOptionsOperator
+    ResetExportOptionsOperator,
+    MigratePreflightGroups
 )
 
 from . panels import (PF_PT_preflight_panel,
@@ -59,6 +60,7 @@ bl_info = {
 
 classes = (
     ExportObjectUIList,
+    MigratePreflightGroups,
     AddSelectionToPreflightGroup,
     AddPreflightObjectOperator,
     RemovePreflightObjectOperator,

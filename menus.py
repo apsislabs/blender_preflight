@@ -33,6 +33,9 @@ class PF_MT_preflight_menu(bpy.types.Menu):
         layout.separator()
         layout.operator("preflight.export_groups", icon="EXPORT")
 
+        layout.separator()
+        layout.operator('preflight.migrate_groups', icon="DUPLICATE")
+
 
 class PF_MT_remove_export_group_menu(bpy.types.Menu):
     bl_idname = "PF_MT_remove_export_group_menu"
