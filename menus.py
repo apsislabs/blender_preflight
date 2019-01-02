@@ -48,7 +48,7 @@ class PF_MT_remove_export_group_menu(bpy.types.Menu):
 
         for group_idx, group in enumerate(groups):
             layout.operator("preflight.remove_export_group",
-                            text=F'Remove {group.name}').group_idx = group_idx
+                            text='Remove ' + group.name).group_idx = group_idx
 
 
 class PF_MT_add_selection_menu(bpy.types.Menu):
@@ -62,4 +62,4 @@ class PF_MT_add_selection_menu(bpy.types.Menu):
 
         for group_idx, group in enumerate(groups):
             layout.operator("preflight.add_selection_to_group",
-                            text=f'Add to {group.name}').group_idx = group_idx
+                            text='Add to ' + group.name).group_idx = group_idx

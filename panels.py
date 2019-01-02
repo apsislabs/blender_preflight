@@ -110,10 +110,10 @@ class PF_PT_preflight_panel(bpy.types.Panel):
 
 
 class PF_PT_preflight_export_options_panel(bpy.types.Panel):
+    bl_idname = "PF_PT_preflight_export_options_panel"
     bl_label = "Export Options"
-
-    bl_space_type = 'PROPERTIES'
-    bl_region_type = 'WINDOW'
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
     bl_context = "scene"
     bl_parent_id = "PF_PT_preflight_panel"
     bl_options = {'DEFAULT_CLOSED'}

@@ -23,10 +23,17 @@ import re
 from . import helpers
 
 
+<< << << < HEAD
+
+
 def redraw_properties():
     for area in bpy.context.screen.areas:
         if area.type == 'PROPERTIES':
             area.tag_redraw()
+
+
+== == == =
+>>>>>> > master
 
 
 class MigratePreflightGroups(bpy.types.Operator):
@@ -41,7 +48,13 @@ class MigratePreflightGroups(bpy.types.Operator):
                 if obj.obj_name and obj.obj_pointer is None:
                     data = bpy.data.objects.get(obj.obj_name)
                     if data is not None:
+
+
+<< << << < HEAD
                         print(f'Migrating {obj.obj_name}')
+== == == =
+                        print('Migrating ' + obj.obj_name)
+>>>>>> > master
                         obj.obj_pointer = data
 
         return {'FINISHED'}
@@ -62,7 +75,7 @@ class AddSelectionToPreflightGroup(bpy.types.Operator):
                 item = group_names.add()
                 item.obj_pointer = obj
 
-            redraw_properties()
+            helpers.redraw_properties()
         else:
             message = 'Group Index is not Set'
             self.report({'ERROR'}, message)
@@ -82,7 +95,7 @@ class AddPreflightObjectOperator(bpy.types.Operator):
         if self.group_idx is not None:
             context.scene.preflight_props.fbx_export_groups[
                 self.group_idx].obj_names.add()
-            redraw_properties()
+            helpers.redraw_properties()
 
         return {'FINISHED'}
 
@@ -99,7 +112,7 @@ class RemovePreflightObjectOperator(bpy.types.Operator):
         if self.group_idx is not None and self.object_idx is not None:
             context.scene.preflight_props.fbx_export_groups[
                 self.group_idx].obj_names.remove(self.object_idx)
-            redraw_properties()
+            helpers.redraw_properties()
 
         return {'FINISHED'}
 
@@ -113,7 +126,7 @@ class AddPreflightExportGroupOperator(bpy.types.Operator):
         groups = context.scene.preflight_props.fbx_export_groups
         new_group = groups.add()
         new_group.name = "Export Group {0}".format(str(len(groups)))
-        redraw_properties()
+        helpers.redraw_properties()
         return {'FINISHED'}
 
 
@@ -128,8 +141,7 @@ class RemovePreflightExportGroupOperator(bpy.types.Operator):
         if self.group_idx is not None:
             context.scene.preflight_props.fbx_export_groups.remove(
                 self.group_idx)
-            redraw_properties()
-
+            helpers.redraw_properties()
         return {'FINISHED'}
 
 
@@ -212,17 +224,6 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
         self.select_objects(objects)
         return bpy.ops.object.transform_apply(location=True, scale=True, rotation=True)
 
-    def duplicate_objects(self, objects, context):
-        duplicates = []
-
-        for src_obj in objects:
-            new_obj = src_obj.copy()
-            new_obj.data = src_obj.data.copy()
-            context.scene.objects.link(new_obj)
-            duplicates.append(new_obj)
-
-        return duplicates
-
     def delete_objects(self, objects):
         self.select_objects(objects)
         return bpy.ops.object.delete()
@@ -283,7 +284,6 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
         original_objects = [context.scene.objects.get(
             obj.obj_pointer.name) for obj in group.obj_names]
 
-        # duplicate_objects = self.duplicate_objects(original_objects, context)
         duplicate_objects = original_objects
         export_options = context.scene.preflight_props.export_options.get_options_dict(
             bake_anim=group.include_animations,
@@ -292,7 +292,6 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
 
         self.prepare_objects(duplicate_objects)
         self.export_objects(duplicate_objects, export_path, **export_options)
-        # self.delete_objects(duplicate_objects)
 
     def export_animations(self, context):
         """

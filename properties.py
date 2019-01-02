@@ -26,7 +26,7 @@ import bpy
 class PreflightMeshGroup(bpy.types.PropertyGroup):
     """Property group of mesh names."""
     obj_pointer: bpy.props.PointerProperty(
-        name="Obj",
+        name="Object Pointer",
         type=bpy.types.Object,
         description="Object to Export")
     obj_name: bpy.props.StringProperty(

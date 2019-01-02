@@ -34,10 +34,10 @@ class ExportObjectUIList(bpy.types.UIList):
 
     def icon_for_object_name(self, obj):
 
-        if not obj:
-            return "QUESTION"
         if obj is None:
             return "ERROR"
+        if not obj.name:
+            return "QUESTION"
 
         if obj.type == "LAMP":
             return "LAMP"
