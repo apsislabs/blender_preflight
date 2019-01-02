@@ -23,11 +23,11 @@ LARGE_BUTTON_SCALE_Y = 1.5
 
 
 class PF_PT_preflight_panel(bpy.types.Panel):
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "TOOLS"
-    bl_label = "Pre-Flight FBX"
-    bl_context = "objectmode"
-    bl_category = "Pre-Flight FBX"
+    bl_idname = "PF_PT_preflight_panel"
+    bl_label = "FBX Preflight"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "scene"
 
     def draw(self, context):
         layout = self.layout
@@ -113,11 +113,13 @@ class PF_PT_preflight_panel(bpy.types.Panel):
 
 
 class PF_PT_preflight_export_options_panel(bpy.types.Panel):
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "TOOLS"
+    bl_idname = "PF_PT_preflight_export_options_panel"
     bl_label = "Export Options"
-    bl_context = "objectmode"
-    bl_category = "Pre-Flight FBX"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "scene"
+    bl_parent_id = "PF_PT_preflight_panel"
+    bl_options = {'DEFAULT_CLOSED'}
 
     def draw(self, context):
         layout = self.layout
