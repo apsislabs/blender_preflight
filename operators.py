@@ -56,7 +56,7 @@ class AddSelectionToPreflightGroup(bpy.types.Operator):
                 item = group_names.add()
                 item.obj_pointer = obj
 
-            redraw_properties()
+            helpers.redraw_properties()
         else:
             message = 'Group Index is not Set'
             self.report({'ERROR'}, message)
@@ -76,6 +76,7 @@ class AddPreflightObjectOperator(bpy.types.Operator):
         if self.group_idx is not None:
             context.scene.preflight_props.fbx_export_groups[
                 self.group_idx].obj_names.add()
+            helpers.redraw_properties()
 
         return {'FINISHED'}
 
@@ -92,6 +93,7 @@ class RemovePreflightObjectOperator(bpy.types.Operator):
         if self.group_idx is not None and self.object_idx is not None:
             context.scene.preflight_props.fbx_export_groups[
                 self.group_idx].obj_names.remove(self.object_idx)
+            helpers.redraw_properties()
 
         return {'FINISHED'}
 
@@ -105,6 +107,7 @@ class AddPreflightExportGroupOperator(bpy.types.Operator):
         groups = context.scene.preflight_props.fbx_export_groups
         new_group = groups.add()
         new_group.name = "Export Group {0}".format(str(len(groups)))
+        helpers.redraw_properties()
         return {'FINISHED'}
 
 
@@ -119,7 +122,7 @@ class RemovePreflightExportGroupOperator(bpy.types.Operator):
         if self.group_idx is not None:
             context.scene.preflight_props.fbx_export_groups.remove(
                 self.group_idx)
-
+            helpers.redraw_properties()
         return {'FINISHED'}
 
 

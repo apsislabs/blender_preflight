@@ -20,6 +20,12 @@ import bpy
 import re
 
 
+def redraw_properties():
+    for area in bpy.context.screen.areas:
+        if area.type == 'PROPERTIES':
+            area.tag_redraw()
+
+
 def group_is_valid(group):
     if not group.name:
         return False
