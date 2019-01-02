@@ -52,7 +52,7 @@ bl_info = {
     "name": "FBX Preflight",
     "author": "Apsis Labs",
     "version": (2, 0, 0),
-    "blender": (2, 79, 0),
+    "blender": (2, 80, 0),
     "category": "Import-Export",
     "description": "Define export groups to be output as FBX files."
 }

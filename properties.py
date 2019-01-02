@@ -115,7 +115,7 @@ class PreflightExportOptionsGroup(bpy.types.PropertyGroup):
     ]
 
     def as_dict(self):
-        return {key: getattr(self, key) for key in dict(self).keys()}
+        return {key: getattr(self, key) for key in self.allowed_keys if hasattr(self, key)}
 
     def reset(self, options):
         for key, value in options:

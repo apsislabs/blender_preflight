@@ -23,19 +23,6 @@ import re
 from . import helpers
 
 
-<< << << < HEAD
-
-
-def redraw_properties():
-    for area in bpy.context.screen.areas:
-        if area.type == 'PROPERTIES':
-            area.tag_redraw()
-
-
-== == == =
->>>>>> > master
-
-
 class MigratePreflightGroups(bpy.types.Operator):
     bl_idname = "preflight.migrate_groups"
     bl_label = "Migrate Preflight Groups"
@@ -48,13 +35,7 @@ class MigratePreflightGroups(bpy.types.Operator):
                 if obj.obj_name and obj.obj_pointer is None:
                     data = bpy.data.objects.get(obj.obj_name)
                     if data is not None:
-
-
-<< << << < HEAD
-                        print(f'Migrating {obj.obj_name}')
-== == == =
                         print('Migrating ' + obj.obj_name)
->>>>>> > master
                         obj.obj_pointer = data
 
         return {'FINISHED'}
@@ -318,8 +299,7 @@ class ResetExportOptionsOperator(bpy.types.Operator):
     bl_description = "Reset all export options to default values."
 
     def execute(self, context):
-        export_options = context.scene.preflight_props.export_options
-        export_options.reset(export_options.defaults_for_unity().items())
+        del context.scene.preflight_props['export_options']
         return {'FINISHED'}
 
     def invoke(self, context, event):
