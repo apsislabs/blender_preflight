@@ -66,7 +66,7 @@ class PF_PT_preflight_panel(bpy.types.Panel):
                 selected_obj = group.obj_names[group.obj_idx]
                 group_box.prop_search(
                     selected_obj,
-                    "obj_name",
+                    "obj_pointer",
                     context.scene,
                     "objects",
                     text="")

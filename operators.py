@@ -146,7 +146,7 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
                 return False
 
             for obj in group.obj_names:
-                if not obj.obj_name:
+                if not obj.obj_pointer:
                     return False
 
         return True
@@ -270,7 +270,7 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
 
         # Export files
         original_objects = [context.scene.objects.get(
-            obj.obj_name) for obj in group.obj_names]
+            obj.obj_pointer.name) for obj in group.obj_names]
         duplicate_objects = self.duplicate_objects(original_objects, context)
         export_options = context.scene.preflight_props.export_options.get_options_dict(
             use_anim=group.include_animations,

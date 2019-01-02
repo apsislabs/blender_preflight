@@ -19,6 +19,7 @@
 import bpy
 import re
 
+
 def group_is_valid(group):
     if not group.name:
         return False
@@ -26,23 +27,26 @@ def group_is_valid(group):
         return False
 
     for obj in group.obj_names:
-        if not obj.obj_name:
+        if not obj.obj_pointer:
             return False
-        if bpy.data.objects.get(obj.obj_name) is None:
+        if bpy.data.objects.get(obj.obj_pointer.name) is None:
             return False
 
     return True
 
+
 def groups_are_valid(groups):
     return (len(groups) > 0) and groups_are_unique(groups)
+
 
 def groups_are_unique(groups):
     group_names = [group.name for group in groups]
     return len(group_names) == len(set(group_names))
 
+
 def to_camelcase(s):
     """
-    Return the given string converted to camelcase. Remove all spaces. 
+    Return the given string converted to camelcase. Remove all spaces.
     """
     words = re.split("[^a-zA-Z0-9]+", s)
     return "".join(
