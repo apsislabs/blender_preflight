@@ -16,42 +16,41 @@
 #
 # ##### END GPL LICENSE BLOCK #####
 
-bl_info = {
-    "name": "FBX Preflight",
-    "author": "Apsis Labs",
-    "version": (0, 1, 2),
-    "blender": (2, 79, 0),
-    "category": "Import-Export",
-    "description": "Define export groups to be output as FBX files."
-}
-
-import bpy
-import os
-import addon_utils
-
-# Updater
-from . import addon_updater_ops
-from . import helpers
-
-if 'bpy' in locals() and 'PreflightPanel' in locals():
-    print("Reload Event Detected...")
-    import importlib
-    for m in (properties, operators, ui, preflight, addon_updater_ops, helpers):
-        importlib.reload(m)
-
-from .properties import (
-    PreflightMeshGroup,
-    PreflightExportGroup,
-    PreflightOptionsGroup
-    )
+from .preflight import (PreflightPanel, PreflightPreferences)
+from .ui import (ExportObjectUIList)
 from .operators import (
     AddPreflightObjectOperator,
     RemovePreflightObjectOperator,
     AddPreflightExportGroupOperator,
     RemovePreflightExportGroupOperator,
     ExportMeshGroupsOperator)
-from .ui import (ExportObjectUIList)
-from .preflight import (PreflightPanel, PreflightPreferences)
+from .properties import (
+    PreflightMeshGroup,
+    PreflightExportGroup,
+    PreflightOptionsGroup
+)
+from . import helpers
+from . import addon_updater_ops
+import addon_utils
+import os
+import bpy
+bl_info = {
+    "name": "FBX Preflight",
+    "author": "Apsis Labs",
+    "version": (1, 0, 0),
+    "blender": (2, 79, 0),
+    "category": "Import-Export",
+    "description": "Define export groups to be output as FBX files."
+}
+
+
+# Updater
+
+if 'bpy' in locals() and 'PreflightPanel' in locals():
+    print("Reload Event Detected...")
+    import importlib
+    for m in (properties, operators, ui, preflight, addon_updater_ops, helpers):
+        importlib.reload(m)
 
 
 def register():
@@ -60,7 +59,8 @@ def register():
 
     bpy.utils.register_module(__name__)
     addon_utils.enable("io_scene_fbx", default_set=True, persistent=True)
-    bpy.types.Scene.preflight_props = bpy.props.PointerProperty(type=PreflightOptionsGroup)
+    bpy.types.Scene.preflight_props = bpy.props.PointerProperty(
+        type=PreflightOptionsGroup)
 
 
 def unregister():
