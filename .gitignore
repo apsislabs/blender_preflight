@@ -3,3 +3,4 @@
 test/preflight
 fbx_preflight_updater
 __pycache__
+.vscode

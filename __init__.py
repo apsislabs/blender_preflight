@@ -16,24 +16,38 @@
 #
 # ##### END GPL LICENSE BLOCK #####
 
-from .preflight import (PreflightPanel, PreflightPreferences)
-from .ui import (ExportObjectUIList)
-from .operators import (
+from . import helpers
+from . ui import (ExportObjectUIList)
+
+from . properties import (
+    PreflightMeshGroup,
+    PreflightExportGroup,
+    PreflightExportOptionsGroup,
+    PreflightOptionsGroup
+)
+
+from . operators import (
+    AddSelectionToPreflightGroup,
     AddPreflightObjectOperator,
     RemovePreflightObjectOperator,
     AddPreflightExportGroupOperator,
     RemovePreflightExportGroupOperator,
-    ExportMeshGroupsOperator)
-from .properties import (
-    PreflightMeshGroup,
-    PreflightExportGroup,
-    PreflightOptionsGroup
+    ExportMeshGroupsOperator,
+    ResetExportOptionsOperator,
+    MigratePreflightGroups
 )
-from . import helpers
-from . import addon_updater_ops
-import addon_utils
-import os
+
+from . panels import (PF_PT_preflight_panel,
+                      PF_PT_preflight_export_options_panel)
+
+from .menus import (
+    PF_MT_preflight_menu,
+    PF_MT_add_selection_menu,
+    PF_MT_remove_export_group_menu
+)
+
 import bpy
+
 bl_info = {
     "name": "FBX Preflight",
     "author": "Apsis Labs",
@@ -44,28 +58,59 @@ bl_info = {
 }
 
 
-# Updater
+classes = (
+    ExportObjectUIList,
+    MigratePreflightGroups,
+    AddSelectionToPreflightGroup,
+    AddPreflightObjectOperator,
+    RemovePreflightObjectOperator,
+    AddPreflightExportGroupOperator,
+    RemovePreflightExportGroupOperator,
+    ResetExportOptionsOperator,
+    ExportMeshGroupsOperator,
+    PreflightMeshGroup,
+    PreflightExportGroup,
+    PreflightExportOptionsGroup,
+    PreflightOptionsGroup,
+    PF_PT_preflight_panel,
+    PF_PT_preflight_export_options_panel,
+    PF_MT_preflight_menu,
+    PF_MT_add_selection_menu,
+    PF_MT_remove_export_group_menu
+)
 
-if 'bpy' in locals() and 'PreflightPanel' in locals():
-    print("Reload Event Detected...")
-    import importlib
-    for m in (properties, operators, ui, preflight, addon_updater_ops, helpers):
-        importlib.reload(m)
+addon_keymaps = []
 
 
 def register():
-    # register auto updater
-    addon_updater_ops.register(bl_info)
+    # import addon_utils
+    # addon_utils.enable("io_scene_fbx", default_set=True, persistent=True)
 
-    bpy.utils.register_module(__name__)
-    addon_utils.enable("io_scene_fbx", default_set=True, persistent=True)
+    for cls in classes:
+        bpy.utils.register_class(cls)
     bpy.types.Scene.preflight_props = bpy.props.PointerProperty(
         type=PreflightOptionsGroup)
+
+    # Add Keymaps
+    kcfg = bpy.context.window_manager.keyconfigs.addon
+    if kcfg:
+        km = kcfg.keymaps.new(name='3D View', space_type='VIEW_3D')
+        kmi_mnu = km.keymap_items.new("wm.call_menu", "M", "PRESS", alt=True)
+        kmi_mnu.properties.name = PF_MT_preflight_menu.bl_idname
+        addon_keymaps.append((km, kmi_mnu))
 
 
 def unregister():
     del bpy.types.Scene.preflight_props
-    bpy.utils.unregister_module(__name__)
+
+    for cls in reversed(classes):
+        bpy.utils.unregister_class(cls)
+
+    # Remove Keymaps
+    for km, shortcut in addon_keymaps:
+        km.keymap_items.remove(shortcut)
+
+    addon_keymaps.clear()
 
 
 if __name__ == "__main__":

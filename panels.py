@@ -17,18 +17,17 @@
 # ##### END GPL LICENSE BLOCK #####
 
 import bpy
-from . import addon_updater_ops
 from . import helpers
 
 LARGE_BUTTON_SCALE_Y = 1.5
 
 
-class PreflightPanel(bpy.types.Panel):
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "TOOLS"
-    bl_label = "Pre-Flight FBX"
-    bl_context = "objectmode"
-    bl_category = "Pre-Flight FBX"
+class PF_PT_preflight_panel(bpy.types.Panel):
+    bl_idname = "PF_PT_preflight_panel"
+    bl_label = "FBX Preflight"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "scene"
 
     def draw(self, context):
         layout = self.layout
@@ -48,7 +47,8 @@ class PreflightPanel(bpy.types.Panel):
         # Export Button
         export_row = layout.row()
         export_row.scale_y = LARGE_BUTTON_SCALE_Y
-        exportButton = export_row.operator("preflight.export_groups", icon="EXPORT")
+        exportButton = export_row.operator(
+            "preflight.export_groups", icon="EXPORT")
         layout.separator()
 
     def layout_export_group(self, group_idx, group, layout, context):
@@ -66,7 +66,7 @@ class PreflightPanel(bpy.types.Panel):
                 selected_obj = group.obj_names[group.obj_idx]
                 group_box.prop_search(
                     selected_obj,
-                    "obj_name",
+                    "obj_pointer",
                     context.scene,
                     "objects",
                     text="")
@@ -112,51 +112,14 @@ class PreflightPanel(bpy.types.Panel):
             emboss=False).group_idx = group_idx
 
 
-class PreflightPreferences(bpy.types.AddonPreferences):
-    bl_idname = __package__
-
-    # addon updater preferences
-
-    auto_check_update = bpy.props.BoolProperty(
-        name="Auto-check for Update",
-        description="If enabled, auto-check for updates using an interval",
-        default=False)
-    updater_intrval_months = bpy.props.IntProperty(
-        name='Months',
-        description="Number of months between checking for updates",
-        default=0,
-        min=0)
-    updater_intrval_days = bpy.props.IntProperty(
-        name='Days',
-        description="Number of days between checking for updates",
-        default=7,
-        min=0)
-    updater_intrval_hours = bpy.props.IntProperty(
-        name='Hours',
-        description="Number of hours between checking for updates",
-        default=0,
-        min=0,
-        max=23)
-    updater_intrval_minutes = bpy.props.IntProperty(
-        name='Minutes',
-        description="Number of minutes between checking for updates",
-        default=0,
-        min=0,
-        max=59)
-
-    def draw(self, context):
-        layout = self.layout
-
-        # updater draw function
-        addon_updater_ops.update_settings_ui(self, context)
-
-
-class PreflightExportOptionsPanel(bpy.types.Panel):
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "TOOLS"
+class PF_PT_preflight_export_options_panel(bpy.types.Panel):
+    bl_idname = "PF_PT_preflight_export_options_panel"
     bl_label = "Export Options"
-    bl_context = "objectmode"
-    bl_category = "Pre-Flight FBX"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "scene"
+    bl_parent_id = "PF_PT_preflight_panel"
+    bl_options = {'DEFAULT_CLOSED'}
 
     def draw(self, context):
         layout = self.layout
@@ -178,4 +141,3 @@ class PreflightExportOptionsPanel(bpy.types.Panel):
         layout.prop(export_options, "separate_animations")
         layout.separator()
         layout.operator("preflight.reset_export_options")
-
