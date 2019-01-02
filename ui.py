@@ -23,26 +23,30 @@ class ExportObjectUIList(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data,
                   active_propname, index):
         # We could write some code to decide which icon to use here...
-        label = self.label_for_object_name(obj_name=item.obj_name)
-        icon = self.icon_for_object_name(obj_name=item.obj_name)
+        label = self.label_for_object_name(obj=item.obj_pointer)
+        icon = self.icon_for_object_name(obj=item.obj_pointer)
         layout.label(label, icon=icon)
 
-    def label_for_object_name(self, obj_name):
-        obj = bpy.data.objects.get(obj_name)
+    def label_for_object_name(self, obj):
 
-        if obj is not None: return "{0} ({1})".format(obj.name, obj.type)
-        if obj_name: return "'{0}' not found".format(obj_name)
+        if obj is not None:
+            return "{0} ({1})".format(obj.name, obj.type)
         return "(unset)"
 
-    def icon_for_object_name(self, obj_name):
-        obj = bpy.data.objects.get(obj_name)
+    def icon_for_object_name(self, obj):
 
-        if not obj_name: return "QUESTION"
-        if obj is None: return "ERROR"
+        if obj is None:
+            return "ERROR"
+        if not obj.name:
+            return "QUESTION"
 
-        if obj.type == "LAMP": return "LAMP"
-        if obj.type == "ARMATURE": return "ARMATURE_DATA"
-        if obj.type == "MESH": return "MESH_DATA"
-        if obj.type == "CAMERA": return "CAMERA_DATA"
+        if obj.type == "LAMP":
+            return "LAMP"
+        if obj.type == "ARMATURE":
+            return "ARMATURE_DATA"
+        if obj.type == "MESH":
+            return "MESH_DATA"
+        if obj.type == "CAMERA":
+            return "CAMERA_DATA"
 
         return 'OBJECT_DATAMODE'

@@ -22,6 +22,49 @@ import re
 
 from . import helpers
 
+
+class MigratePreflightGroups(bpy.types.Operator):
+    bl_idname = "preflight.migrate_groups"
+    bl_label = "Migrate Preflight Groups"
+    bl_description = "Migrate Preflight Groups from 2.78 to 2.8x"
+
+    def execute(self, context):
+        groups = context.scene.preflight_props.fbx_export_groups
+        for group_idx, group in enumerate(groups):
+            for obj_idx, obj in enumerate(group.obj_names):
+                if obj.obj_name and obj.obj_pointer is None:
+                    data = bpy.data.objects.get(obj.obj_name)
+                    if data is not None:
+                        print('Migrating ' + obj.obj_name)
+                        obj.obj_pointer = data
+
+        return {'FINISHED'}
+
+
+class AddSelectionToPreflightGroup(bpy.types.Operator):
+    bl_idname = "preflight.add_selection_to_group"
+    bl_label = "Add Selection"
+    bl_description = "Add Selection to an export group"
+
+    group_idx = bpy.props.IntProperty()
+
+    def execute(self, context):
+        if self.group_idx is not None:
+            for idx, obj in enumerate(context.selected_objects):
+                group_names = context.scene.preflight_props.fbx_export_groups[
+                    self.group_idx].obj_names
+                item = group_names.add()
+                item.obj_pointer = obj
+
+            helpers.redraw_properties()
+        else:
+            message = 'Group Index is not Set'
+            self.report({'ERROR'}, message)
+            raise ValueError(message)
+
+        return {'FINISHED'}
+
+
 class AddPreflightObjectOperator(bpy.types.Operator):
     bl_idname = "preflight.add_object_to_group"
     bl_label = "Add Object"
@@ -33,6 +76,7 @@ class AddPreflightObjectOperator(bpy.types.Operator):
         if self.group_idx is not None:
             context.scene.preflight_props.fbx_export_groups[
                 self.group_idx].obj_names.add()
+            helpers.redraw_properties()
 
         return {'FINISHED'}
 
@@ -49,6 +93,7 @@ class RemovePreflightObjectOperator(bpy.types.Operator):
         if self.group_idx is not None and self.object_idx is not None:
             context.scene.preflight_props.fbx_export_groups[
                 self.group_idx].obj_names.remove(self.object_idx)
+            helpers.redraw_properties()
 
         return {'FINISHED'}
 
@@ -62,6 +107,7 @@ class AddPreflightExportGroupOperator(bpy.types.Operator):
         groups = context.scene.preflight_props.fbx_export_groups
         new_group = groups.add()
         new_group.name = "Export Group {0}".format(str(len(groups)))
+        helpers.redraw_properties()
         return {'FINISHED'}
 
 
@@ -76,7 +122,7 @@ class RemovePreflightExportGroupOperator(bpy.types.Operator):
         if self.group_idx is not None:
             context.scene.preflight_props.fbx_export_groups.remove(
                 self.group_idx)
-
+            helpers.redraw_properties()
         return {'FINISHED'}
 
 
@@ -103,7 +149,7 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
                 return False
 
             for obj in group.obj_names:
-                if not obj.obj_name:
+                if not obj.obj_pointer:
                     return False
 
         return True
@@ -119,21 +165,25 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
 
         # SAFETY CHECK
         if not helpers.groups_are_unique(groups):
-            self.report({'WARNING'}, "Cannot export with duplicate group names.")
+            self.report(
+                {'WARNING'}, "Cannot export with duplicate group names.")
             return {'CANCELLED'}
 
         if len(groups) < 1:
-            self.report({'WARNING'}, "Must have at least 1 export group to export files.")
+            self.report(
+                {'WARNING'}, "Must have at least 1 export group to export files.")
             return {'CANCELLED'}
 
         # DO GROUP EXPORT
         for group_idx, group in enumerate(groups):
             try:
                 self.export_group(group, context)
-                self.report({'INFO'}, "Exported Group {0} of {1} Successfully.".format(group_idx+1, len(groups)))
+                self.report({'INFO'}, "Exported Group {0} of {1} Successfully.".format(
+                    group_idx+1, len(groups)))
             except Exception as e:
                 print(e)
-                self.report({'ERROR'}, "There was an error while exporting: {0}.".format(group.name))
+                self.report(
+                    {'ERROR'}, "There was an error while exporting: {0}.".format(group.name))
                 return {'CANCELLED'}
 
         # DO ANIMATION EXPORT
@@ -142,11 +192,13 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
                 self.export_animations(context)
             except Exception as e:
                 print(e)
-                self.report({'ERROR'}, "There was an error while exporting animations")
+                self.report(
+                    {'ERROR'}, "There was an error while exporting animations")
                 return {'CANCELLED'}
 
         # FINISH
-        self.report({'INFO'}, "Exported {0} Groups Successfully.".format(len(groups)))
+        self.report(
+            {'INFO'}, "Exported {0} Groups Successfully.".format(len(groups)))
         return {'FINISHED'}
 
     def prepare_objects(self, objects):
@@ -215,12 +267,13 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
 
         # Validate export path
         export_path = export_path_for_string(group.name, context.scene)
-        
+
         if not ensure_export_path(export_path):
             raise ValueError("Invalid Export Path")
 
         # Export files
-        original_objects = [context.scene.objects.get(obj.obj_name) for obj in group.obj_names]
+        original_objects = [context.scene.objects.get(
+            obj.obj_pointer.name) for obj in group.obj_names]
         duplicate_objects = self.duplicate_objects(original_objects, context)
         export_options = context.scene.preflight_props.export_options.get_options_dict(
             use_anim=group.include_animations,
@@ -236,14 +289,19 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
         Export each armature in the current context with all
         animations attached.
         """
-        export_options = context.scene.preflight_props.export_options.defaults_for_unity(object_types={'ARMATURE'})
+        export_options = context.scene.preflight_props.export_options.defaults_for_unity(
+            object_types={'ARMATURE'})
         print(export_options)
 
         for obj in context.scene.objects:
-            if obj.type != 'ARMATURE': continue
-            export_path = export_path_for_string(obj.name, context.scene, suffix="@animations")
-            if not ensure_export_path(export_path): raise ValueError("Invalid Export Path")
+            if obj.type != 'ARMATURE':
+                continue
+            export_path = export_path_for_string(
+                obj.name, context.scene, suffix="@animations")
+            if not ensure_export_path(export_path):
+                raise ValueError("Invalid Export Path")
             self.export_objects([obj], export_path, **export_options)
+
 
 class ResetExportOptionsOperator(bpy.types.Operator):
     bl_idname = "preflight.reset_export_options"
@@ -269,17 +327,21 @@ def ensure_export_path(export_path):
 
     return True
 
+
 def filename_for_string(s, suffix=""):
     """Determine Filename for String"""
     filepath = bpy.data.filepath
     filename = os.path.splitext(os.path.basename(filepath))[0]
     return "{0}-{1}{2}.fbx".format(helpers.to_camelcase(filename), helpers.to_camelcase(s), suffix)
 
+
 def export_path_for_string(s, scene, suffix=""):
     """Determine the export path for an export group."""
     filename = filename_for_string(s, suffix=suffix)
-    directory = bpy.path.abspath(scene.preflight_props.export_options.export_location)
+    directory = bpy.path.abspath(
+        scene.preflight_props.export_options.export_location)
     return os.path.join(directory, filename)
+
 
 def error_message_for_obj_name(obj_name=""):
     """
