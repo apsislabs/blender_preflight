@@ -51,7 +51,7 @@ import bpy
 bl_info = {
     "name": "FBX Preflight",
     "author": "Apsis Labs",
-    "version": (0, 1, 3),
+    "version": (1, 0, 0),
     "blender": (2, 79, 0),
     "category": "Import-Export",
     "description": "Define export groups to be output as FBX files."
