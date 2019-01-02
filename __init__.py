@@ -18,22 +18,34 @@
 
 from . import helpers
 from . ui import (ExportObjectUIList)
+
 from . properties import (
     PreflightMeshGroup,
     PreflightExportGroup,
     PreflightExportOptionsGroup,
     PreflightOptionsGroup
 )
+
 from . operators import (
+    AddSelectionToPreflightGroup,
     AddPreflightObjectOperator,
     RemovePreflightObjectOperator,
     AddPreflightExportGroupOperator,
     RemovePreflightExportGroupOperator,
     ExportMeshGroupsOperator,
-    ResetExportOptionsOperator
+    ResetExportOptionsOperator,
+    MigratePreflightGroups
 )
-from . preflight import (PF_PT_preflight_panel,
-                         PF_PT_preflight_export_options_panel)
+
+from . panels import (PF_PT_preflight_panel,
+                      PF_PT_preflight_export_options_panel)
+
+from .menus import (
+    PF_MT_preflight_menu,
+    PF_MT_add_selection_menu,
+    PF_MT_remove_export_group_menu
+)
+
 import bpy
 
 bl_info = {
@@ -48,6 +60,8 @@ bl_info = {
 
 classes = (
     ExportObjectUIList,
+    MigratePreflightGroups,
+    AddSelectionToPreflightGroup,
     AddPreflightObjectOperator,
     RemovePreflightObjectOperator,
     AddPreflightExportGroupOperator,
@@ -59,8 +73,13 @@ classes = (
     PreflightExportOptionsGroup,
     PreflightOptionsGroup,
     PF_PT_preflight_panel,
-    PF_PT_preflight_export_options_panel
+    PF_PT_preflight_export_options_panel,
+    PF_MT_preflight_menu,
+    PF_MT_add_selection_menu,
+    PF_MT_remove_export_group_menu
 )
+
+addon_keymaps = []
 
 
 def register():
@@ -72,12 +91,26 @@ def register():
     bpy.types.Scene.preflight_props = bpy.props.PointerProperty(
         type=PreflightOptionsGroup)
 
+    # Add Keymaps
+    kcfg = bpy.context.window_manager.keyconfigs.addon
+    if kcfg:
+        km = kcfg.keymaps.new(name='3D View', space_type='VIEW_3D')
+        kmi_mnu = km.keymap_items.new("wm.call_menu", "M", "PRESS", alt=True)
+        kmi_mnu.properties.name = PF_MT_preflight_menu.bl_idname
+        addon_keymaps.append((km, kmi_mnu))
+
 
 def unregister():
     del bpy.types.Scene.preflight_props
 
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
+
+    # Remove Keymaps
+    for km, shortcut in addon_keymaps:
+        km.keymap_items.remove(shortcut)
+
+    addon_keymaps.clear()
 
 
 if __name__ == "__main__":

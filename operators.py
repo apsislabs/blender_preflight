@@ -23,6 +23,54 @@ import re
 from . import helpers
 
 
+def redraw_properties():
+    for area in bpy.context.screen.areas:
+        if area.type == 'PROPERTIES':
+            area.tag_redraw()
+
+
+class MigratePreflightGroups(bpy.types.Operator):
+    bl_idname = "preflight.migrate_groups"
+    bl_label = "Migrate Preflight Groups"
+    bl_description = "Migrate Preflight Groups from 2.78 to 2.8x"
+
+    def execute(self, context):
+        groups = context.scene.preflight_props.fbx_export_groups
+        for group_idx, group in enumerate(groups):
+            for obj_idx, obj in enumerate(group.obj_names):
+                if obj.obj_name and obj.obj_pointer is None:
+                    data = bpy.data.objects.get(obj.obj_name)
+                    if data is not None:
+                        print(f'Migrating {obj.obj_name}')
+                        obj.obj_pointer = data
+
+        return {'FINISHED'}
+
+
+class AddSelectionToPreflightGroup(bpy.types.Operator):
+    bl_idname = "preflight.add_selection_to_group"
+    bl_label = "Add Selection"
+    bl_description = "Add Selection to an export group"
+
+    group_idx: bpy.props.IntProperty()
+
+    def execute(self, context):
+        if self.group_idx is not None:
+            for idx, obj in enumerate(context.selected_objects):
+                group_names = context.scene.preflight_props.fbx_export_groups[
+                    self.group_idx].obj_names
+                item = group_names.add()
+                item.obj_pointer = obj
+
+            redraw_properties()
+        else:
+            message = 'Group Index is not Set'
+            self.report({'ERROR'}, message)
+            raise ValueError(message)
+
+        return {'FINISHED'}
+
+
 class AddPreflightObjectOperator(bpy.types.Operator):
     bl_idname = "preflight.add_object_to_group"
     bl_label = "Add Object"
@@ -34,6 +82,7 @@ class AddPreflightObjectOperator(bpy.types.Operator):
         if self.group_idx is not None:
             context.scene.preflight_props.fbx_export_groups[
                 self.group_idx].obj_names.add()
+            redraw_properties()
 
         return {'FINISHED'}
 
@@ -50,6 +99,7 @@ class RemovePreflightObjectOperator(bpy.types.Operator):
         if self.group_idx is not None and self.object_idx is not None:
             context.scene.preflight_props.fbx_export_groups[
                 self.group_idx].obj_names.remove(self.object_idx)
+            redraw_properties()
 
         return {'FINISHED'}
 
@@ -63,6 +113,7 @@ class AddPreflightExportGroupOperator(bpy.types.Operator):
         groups = context.scene.preflight_props.fbx_export_groups
         new_group = groups.add()
         new_group.name = "Export Group {0}".format(str(len(groups)))
+        redraw_properties()
         return {'FINISHED'}
 
 
@@ -77,6 +128,7 @@ class RemovePreflightExportGroupOperator(bpy.types.Operator):
         if self.group_idx is not None:
             context.scene.preflight_props.fbx_export_groups.remove(
                 self.group_idx)
+            redraw_properties()
 
         return {'FINISHED'}
 
@@ -104,7 +156,7 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
                 return False
 
             for obj in group.obj_names:
-                if not obj.obj_name:
+                if not obj.obj_pointer:
                     return False
 
         return True
@@ -229,7 +281,7 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
 
         # Export files
         original_objects = [context.scene.objects.get(
-            obj.obj_name.strip()) for obj in group.obj_names]
+            obj.obj_pointer.name) for obj in group.obj_names]
 
         # duplicate_objects = self.duplicate_objects(original_objects, context)
         duplicate_objects = original_objects
@@ -247,9 +299,9 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
         Export each armature in the current context with all
         animations attached.
         """
+
         export_options = context.scene.preflight_props.export_options.defaults_for_unity(
             object_types={'ARMATURE'})
-        print(export_options)
 
         for obj in context.scene.objects:
             if obj.type != 'ARMATURE':
