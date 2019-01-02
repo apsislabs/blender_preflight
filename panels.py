@@ -22,7 +22,7 @@ from . import helpers
 LARGE_BUTTON_SCALE_Y = 1.5
 
 
-class PreflightPanel(bpy.types.Panel):
+class PF_PT_preflight_panel(bpy.types.Panel):
     bl_space_type = "VIEW_3D"
     bl_region_type = "TOOLS"
     bl_label = "Pre-Flight FBX"
@@ -112,7 +112,7 @@ class PreflightPanel(bpy.types.Panel):
             emboss=False).group_idx = group_idx
 
 
-class PreflightExportOptionsPanel(bpy.types.Panel):
+class PF_PT_preflight_export_options_panel(bpy.types.Panel):
     bl_space_type = "VIEW_3D"
     bl_region_type = "TOOLS"
     bl_label = "Export Options"
