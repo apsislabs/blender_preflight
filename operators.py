@@ -181,17 +181,14 @@ class PF_OT_export_mesh_group_operator(bpy.types.Operator):
         # DO GROUP EXPORT
         try:
             self.export_group(group, context)
-            self.report({'INFO'}, "Exported Group {0} Successfully.".format(group.name))
+            self.report(
+                {'INFO'}, "Exported Group {0} Successfully.".format(group.name))
             return {'FINISHED'}
         except Exception as e:
             print(e)
             self.report(
                 {'ERROR'}, "There was an error while exporting: {0}.".format(group.name))
             return {'CANCELLED'}
-
-    def prepare_objects(self, objects):
-        self.select_objects(objects)
-        return bpy.ops.object.transform_apply(location=True, scale=True, rotation=True)
 
     def select_objects(self, objects, append_selection=False):
         """
@@ -211,14 +208,32 @@ class PF_OT_export_mesh_group_operator(bpy.types.Operator):
 
         return True
 
+    def toggle_hide_for_objects(self, objects, hide_state=False, values=[]):
+        hidden_states = []
+
+        for idx, obj in enumerate(objects):
+            if obj is not None:
+                hidden_states.insert(idx, obj.hide)
+                new_state = values[idx] if idx < len(values) else hide_state
+                obj.hide = new_state
+
+        return hidden_states
+
     def export_objects(self, objects, filepath, **kwargs):
+        # Unhide all objects and store their original hidden state
+        original_hide_values = self.toggle_hide_for_objects(
+            objects, hide_state=False)
+
+        # Select Objects
         self.select_objects(objects)
 
         # Do Export
         export_opts = kwargs
         export_opts['filepath'] = filepath
-
         bpy.ops.export_scene.fbx(**export_opts)
+
+        # Reset to original hide states
+        self.toggle_hide_for_objects(objects, values=original_hide_values)
 
         # Deselect Objects
         bpy.ops.object.select_all(action='DESELECT')
@@ -254,7 +269,6 @@ class PF_OT_export_mesh_group_operator(bpy.types.Operator):
             use_mesh_modifiers=group.apply_modifiers
         )
 
-        self.prepare_objects(export_objects)
         self.export_objects(export_objects, export_path, **export_options)
 
     def export_animations(self, context):
