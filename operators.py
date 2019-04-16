@@ -48,6 +48,45 @@ class PF_OT_add_selection_to_preflight_group(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class PF_OT_create_preflight_group_from_selection(bpy.types.Operator):
+    bl_idname = "preflight.create_group_from_selection"
+    bl_label = "Create Group from Selection..."
+    bl_description = "Create an export group from the current selection."
+
+    group_name = bpy.props.StringProperty(
+        name="New Group Name",
+        default="New Export Group"
+    )
+
+    @classmethod
+    def poll(cls, context):
+        return len(context.selected_objects) > 0
+
+    def invoke(self, context, event):
+        return context.window_manager.invoke_props_dialog(self, width=200)
+
+    def draw(self, context):
+        self.layout.prop(self, "group_name", text="")
+
+    def execute(self, context):
+        if self.group_name is not None:
+            groups = context.scene.preflight_props.fbx_export_groups
+            new_group = groups.add()
+            new_group.name = self.group_name
+
+            for idx, obj in enumerate(context.selected_objects):
+                item = new_group.obj_names.add()
+                item.obj_pointer = obj
+
+            helpers.redraw_properties()
+        else:
+            message = 'Group Name is not Set'
+            self.report({'ERROR'}, message)
+            raise ValueError(message)
+
+        return {'FINISHED'}
+
+
 class PF_OT_add_preflight_object_operator(bpy.types.Operator):
     bl_idname = "preflight.add_object_to_group"
     bl_label = "Add Object"
@@ -83,13 +122,24 @@ class PF_OT_remove_preflight_object_operator(bpy.types.Operator):
 
 class PF_OT_add_preflight_export_group_operator(bpy.types.Operator):
     bl_idname = "preflight.add_export_group"
-    bl_label = "Add Export Group"
+    bl_label = "Add Export Group..."
     bl_description = "Add an export group. Each group will be exported to its own .fbx file with all selected objects."
+
+    group_name = bpy.props.StringProperty(
+        name="New Group Name",
+        default="New Export Group"
+    )
+
+    def invoke(self, context, event):
+        return context.window_manager.invoke_props_dialog(self, width=200)
+
+    def draw(self, context):
+        self.layout.prop(self, "group_name", text="")
 
     def execute(self, context):
         groups = context.scene.preflight_props.fbx_export_groups
         new_group = groups.add()
-        new_group.name = "Export Group {0}".format(str(len(groups)))
+        new_group.name = self.group_name
         helpers.redraw_properties()
         return {'FINISHED'}
 

@@ -39,13 +39,17 @@ class PF_PT_preflight_panel(bpy.types.Panel):
 
         layout.separator()
 
+        # New Buttons
+        new_row = layout.row(align=True)
+        new_row.scale_y = LARGE_BUTTON_SCALE_Y
+        new_button = new_row.operator("preflight.add_export_group", icon="ZOOMIN")
+        create_button = new_row.operator("preflight.create_group_from_selection")
+
         # Export Button
         export_row = layout.row()
         export_row.scale_y = LARGE_BUTTON_SCALE_Y
-        newButton = export_row.operator(
-            "preflight.add_export_group",
-            icon="ZOOMIN")
-        exportButton = export_row.operator(
+
+        export_button = export_row.operator(
             "preflight.export_all_groups",
             icon="EXPORT")
 

@@ -25,10 +25,11 @@ class PF_MT_preflight_menu(bpy.types.Menu):
 
     def draw(self, context):
         layout = self.layout
-        layout.operator("preflight.add_export_group",
-                        text="Add Export Group")
+        layout.operator_context = "INVOKE_DEFAULT"
+        layout.operator("preflight.add_export_group")
         layout.menu(PF_MT_remove_export_group_menu.bl_idname)
         layout.separator()
+        layout.operator("preflight.create_group_from_selection")
         layout.menu(PF_MT_add_selection_menu.bl_idname)
         layout.separator()
         layout.operator("preflight.export_all_groups", icon="EXPORT")
@@ -56,7 +57,6 @@ class PF_MT_add_selection_menu(bpy.types.Menu):
         layout = self.layout
 
         groups = context.scene.preflight_props.fbx_export_groups
-
         for group_idx, group in enumerate(groups):
             layout.operator("preflight.add_selection_to_group",
                             text='Add to ' + group.name).group_idx = group_idx
