@@ -266,8 +266,9 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
             raise ValueError(message)
 
         # Validate export path
-        export_path = export_path_for_string(group.name, context.scene)
-
+        export_dir = context.scene.preflight_props.export_options.export_location
+        export_path = export_path_for_string(
+            group.name, export_dir, subdir=group.export_location)
         if not ensure_export_path(export_path):
             raise ValueError("Invalid Export Path")
 
@@ -291,13 +292,13 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
         """
         export_options = context.scene.preflight_props.export_options.defaults_for_unity(
             object_types={'ARMATURE'})
-        print(export_options)
 
         for obj in context.scene.objects:
             if obj.type != 'ARMATURE':
                 continue
+            export_dir = context.scene.preflight_props.export_options.export_location
             export_path = export_path_for_string(
-                obj.name, context.scene, suffix="@animations")
+                obj.name, export_dir, suffix="@animations")
             if not ensure_export_path(export_path):
                 raise ValueError("Invalid Export Path")
             self.export_objects([obj], export_path, **export_options)
@@ -317,6 +318,22 @@ class ResetExportOptionsOperator(bpy.types.Operator):
         return context.window_manager.invoke_confirm(self, event)
 
 
+class AddExportDestinationOperator(bpy.types.Operator):
+    bl_idname = "preflight.add_export_destination"
+    bl_label = "New Export Destination"
+    bl_description = "Add a new export destination"
+
+    destination_name = bpy.props.StringProperty()
+
+    def execute(self, context):
+        if self.destination_name is not None:
+            destination = context.scene.preflight_props.export_destinations.add()
+            destination.name = self.destination_name
+            helpers.redraw_properties()
+
+        return {'FINISHED'}
+
+
 def ensure_export_path(export_path):
     try:
         export_dir = os.path.dirname(export_path)
@@ -330,17 +347,14 @@ def ensure_export_path(export_path):
 
 def filename_for_string(s, suffix=""):
     """Determine Filename for String"""
-    filepath = bpy.data.filepath
-    filename = os.path.splitext(os.path.basename(filepath))[0]
-    return "{0}-{1}{2}.fbx".format(helpers.to_camelcase(filename), helpers.to_camelcase(s), suffix)
+    basename = bpy.path.clean_name("{0}{1}".format(s, suffix))
+    return basename + ".fbx"
 
 
-def export_path_for_string(s, scene, suffix=""):
+def export_path_for_string(s, dir, suffix="", subdir=""):
     """Determine the export path for an export group."""
     filename = filename_for_string(s, suffix=suffix)
-    directory = bpy.path.abspath(
-        scene.preflight_props.export_options.export_location)
-    return os.path.join(directory, filename)
+    return bpy.path.abspath(os.path.join(dir, subdir, filename))
 
 
 def error_message_for_obj_name(obj_name=""):

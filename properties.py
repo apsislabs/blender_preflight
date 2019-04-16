@@ -23,6 +23,7 @@ import bpy
 #
 
 
+
 class PreflightMeshGroup(bpy.types.PropertyGroup):
     """Property group of mesh names."""
 
@@ -58,6 +59,12 @@ class PreflightExportGroup(bpy.types.PropertyGroup):
         default=True)
     obj_names = bpy.props.CollectionProperty(type=PreflightMeshGroup)
     obj_idx = bpy.props.IntProperty(name="Object Index", default=0)
+
+    export_location = bpy.props.StringProperty(
+        name="Export To",
+        description="Choose an export location. Relative to the base export location set in the Export Options.",
+        default="",
+        maxlen=1024)
 
 
 class PreflightExportOptionsGroup(bpy.types.PropertyGroup):
@@ -189,7 +196,7 @@ class PreflightExportOptionsGroup(bpy.types.PropertyGroup):
     export_location = bpy.props.StringProperty(
         name="Export To",
         description="Choose an export location. Relative location prefixed with '//'.",
-        default="//preflight",
+        default="//",
         maxlen=1024,
         subtype='DIR_PATH')
 

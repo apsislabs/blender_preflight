@@ -34,22 +34,18 @@ class PF_PT_preflight_panel(bpy.types.Panel):
         groups = context.scene.preflight_props.fbx_export_groups
 
         # Export Groups
-        layout.operator(
-            "preflight.add_export_group",
-            text="Add Export Group",
-            icon="ZOOMIN")
-
         for group_idx, group in enumerate(groups):
             self.layout_export_group(group_idx, group, layout, context)
-
-        layout.separator()
 
         # Export Button
         export_row = layout.row()
         export_row.scale_y = LARGE_BUTTON_SCALE_Y
+        newButton = export_row.operator(
+            "preflight.add_export_group",
+            icon="ZOOMIN")
         exportButton = export_row.operator(
-            "preflight.export_groups", icon="EXPORT")
-        layout.separator()
+            "preflight.export_groups",
+            icon="EXPORT")
 
     def layout_export_group(self, group_idx, group, layout, context):
         group_box = layout.box()
@@ -72,7 +68,11 @@ class PF_PT_preflight_panel(bpy.types.Panel):
                     text="")
 
             # Export Options
-            options_column = group_box.column(align=True)
+            group_box.separator()
+            options_column = group_box.column()
+            options_column.label("Export Location (optional)", icon="LIBRARY_DATA_DIRECT")
+            options_column.prop(group, "export_location", text="")
+            options_column.separator()
             options_column.prop(group, "include_animations")
             options_column.prop(group, "apply_modifiers")
 
@@ -114,7 +114,7 @@ class PF_PT_preflight_panel(bpy.types.Panel):
 
 class PF_PT_preflight_export_options_panel(bpy.types.Panel):
     bl_idname = "PF_PT_preflight_export_options_panel"
-    bl_label = "Export Options"
+    bl_label = "Preflight Export Options"
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "scene"
