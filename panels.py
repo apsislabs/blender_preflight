@@ -37,6 +37,8 @@ class PF_PT_preflight_panel(bpy.types.Panel):
         for group_idx, group in enumerate(groups):
             self.layout_export_group(group_idx, group, layout, context)
 
+        layout.separator()
+
         # Export Button
         export_row = layout.row()
         export_row.scale_y = LARGE_BUTTON_SCALE_Y
@@ -44,7 +46,7 @@ class PF_PT_preflight_panel(bpy.types.Panel):
             "preflight.add_export_group",
             icon="ZOOMIN")
         exportButton = export_row.operator(
-            "preflight.export_groups",
+            "preflight.export_all_groups",
             icon="EXPORT")
 
     def layout_export_group(self, group_idx, group, layout, context):
@@ -70,7 +72,8 @@ class PF_PT_preflight_panel(bpy.types.Panel):
             # Export Options
             group_box.separator()
             options_column = group_box.column()
-            options_column.label("Export Location (optional)", icon="LIBRARY_DATA_DIRECT")
+            options_column.label("Export Location (optional)",
+                                 icon="LIBRARY_DATA_DIRECT")
             options_column.prop(group, "export_location", text="")
             options_column.separator()
             options_column.prop(group, "include_animations")
@@ -107,6 +110,9 @@ class PF_PT_preflight_panel(bpy.types.Panel):
         header_row.prop(group, "name", text="")
         header_row.alert = False
 
+        header_row.operator(
+            "preflight.export_single_group", icon="EXPORT", text="",
+            emboss=False).group_idx = group_idx
         header_row.operator(
             "preflight.remove_export_group", icon="X", text="",
             emboss=False).group_idx = group_idx

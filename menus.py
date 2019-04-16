@@ -31,7 +31,7 @@ class PF_MT_preflight_menu(bpy.types.Menu):
         layout.separator()
         layout.menu(PF_MT_add_selection_menu.bl_idname)
         layout.separator()
-        layout.operator("preflight.export_groups", icon="EXPORT")
+        layout.operator("preflight.export_all_groups", icon="EXPORT")
 
 
 class PF_MT_remove_export_group_menu(bpy.types.Menu):

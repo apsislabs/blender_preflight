@@ -4,7 +4,7 @@ The goal of this project is to script the export of `.blend` files to `.fbx` ass
 
 ## CLI Usage
 
-Preflight can also be done from the command line. While the operation itself is available with the `bpy.ops.preflight.export_groups()` method, it is easier to simply pass a python script to blender along with a `.blend` file. Usage for the bundled script is:
+Preflight can also be done from the command line. While the operation itself is available with the `bpy.ops.preflight.export_all_groups()` method, it is easier to simply pass a python script to blender along with a `.blend` file. Usage for the bundled script is:
 
 ```
 $ blender test/Preflight\ Test.blend -b --python cli/preflight_blendfile.py

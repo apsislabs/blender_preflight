@@ -21,7 +21,7 @@ import os
 import re
 
 from . import helpers
-
+from . properties import PreflightExportGroup
 
 class PF_OT_add_selection_to_preflight_group(bpy.types.Operator):
     bl_idname = "preflight.add_selection_to_group"
@@ -108,33 +108,12 @@ class PF_OT_remove_preflight_export_group_operator(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class PF_OT_export_mesh_groups_operator(bpy.types.Operator):
-    bl_idname = "preflight.export_groups"
-    bl_label = "Export All Groups"
-    bl_description = "Export all export groups to the chosen export destination."
+class PF_OT_export_mesh_group_operator(bpy.types.Operator):
+    bl_idname = "preflight.export_single_group"
+    bl_label = "Export Single Group"
+    bl_description = "Export a single group to the chosen export destination."
 
-    @classmethod
-    def poll(cls, context):
-        """
-        Poll for ability to perform export. Only return
-        true if there is at least 1 group, and all objects
-        in export groups are set.
-        """
-
-        groups = context.scene.preflight_props.fbx_export_groups
-
-        if len(groups) < 1:
-            return False
-
-        for group in groups:
-            if len(group.obj_names) < 1:
-                return False
-
-            for obj in group.obj_names:
-                if not obj.obj_pointer:
-                    return False
-
-        return True
+    group_idx = bpy.props.IntProperty()
 
     def execute(self, context):
         # SANITY CHECK
@@ -142,65 +121,26 @@ class PF_OT_export_mesh_groups_operator(bpy.types.Operator):
             self.report({'ERROR'}, "File must be saved before exporting.")
             return {'CANCELLED'}
 
-        # SETUP
-        groups = context.scene.preflight_props.fbx_export_groups
-
-        # SAFETY CHECK
-        if not helpers.groups_are_unique(groups):
-            self.report(
-                {'WARNING'}, "Cannot export with duplicate group names.")
+        if self.group_idx is None:
+            self.report({'ERROR', "Must export a valid group."})
             return {'CANCELLED'}
 
-        if len(groups) < 1:
-            self.report(
-                {'WARNING'}, "Must have at least 1 export group to export files.")
-            return {'CANCELLED'}
+        group = context.scene.preflight_props.fbx_export_groups[self.group_idx]
 
         # DO GROUP EXPORT
-        for group_idx, group in enumerate(groups):
-            try:
-                self.export_group(group, context)
-                self.report({'INFO'}, "Exported Group {0} of {1} Successfully.".format(
-                    group_idx+1, len(groups)))
-            except Exception as e:
-                print(e)
-                self.report(
-                    {'ERROR'}, "There was an error while exporting: {0}.".format(group.name))
-                return {'CANCELLED'}
-
-        # DO ANIMATION EXPORT
-        if context.scene.preflight_props.export_options.separate_animations:
-            try:
-                self.export_animations(context)
-            except Exception as e:
-                print(e)
-                self.report(
-                    {'ERROR'}, "There was an error while exporting animations")
-                return {'CANCELLED'}
-
-        # FINISH
-        self.report(
-            {'INFO'}, "Exported {0} Groups Successfully.".format(len(groups)))
-        return {'FINISHED'}
+        try:
+            self.export_group(group, context)
+            self.report({'INFO'}, "Exported Group {0} Successfully.".format(group.name))
+            return {'FINISHED'}
+        except Exception as e:
+            print(e)
+            self.report(
+                {'ERROR'}, "There was an error while exporting: {0}.".format(group.name))
+            return {'CANCELLED'}
 
     def prepare_objects(self, objects):
         self.select_objects(objects)
         return bpy.ops.object.transform_apply(location=True, scale=True, rotation=True)
-
-    def duplicate_objects(self, objects, context):
-        duplicates = []
-
-        for src_obj in objects:
-            new_obj = src_obj.copy()
-            new_obj.data = src_obj.data.copy()
-            context.scene.objects.link(new_obj)
-            duplicates.append(new_obj)
-
-        return duplicates
-
-    def delete_objects(self, objects):
-        self.select_objects(objects)
-        return bpy.ops.object.delete()
 
     def select_objects(self, objects, append_selection=False):
         """
@@ -255,17 +195,106 @@ class PF_OT_export_mesh_groups_operator(bpy.types.Operator):
             raise ValueError("Invalid Export Path")
 
         # Export files
-        original_objects = [context.scene.objects.get(
+        export_objects = [context.scene.objects.get(
             obj.obj_pointer.name) for obj in group.obj_names]
-        duplicate_objects = self.duplicate_objects(original_objects, context)
+
         export_options = context.scene.preflight_props.export_options.get_options_dict(
             use_anim=group.include_animations,
             use_mesh_modifiers=group.apply_modifiers
         )
 
-        self.prepare_objects(duplicate_objects)
-        self.export_objects(duplicate_objects, export_path, **export_options)
-        self.delete_objects(duplicate_objects)
+        self.prepare_objects(export_objects)
+        self.export_objects(export_objects, export_path, **export_options)
+
+    def export_animations(self, context):
+        """
+        Export each armature in the current context with all
+        animations attached.
+        """
+        export_options = context.scene.preflight_props.export_options.defaults_for_unity(
+            object_types={'ARMATURE'})
+
+        for obj in context.scene.objects:
+            if obj.type != 'ARMATURE':
+                continue
+            export_dir = context.scene.preflight_props.export_options.export_location
+            export_path = export_path_for_string(
+                obj.name, export_dir, suffix="@animations")
+            if not ensure_export_path(export_path):
+                raise ValueError("Invalid Export Path")
+            self.export_objects([obj], export_path, **export_options)
+
+
+class PF_OT_export_mesh_groups_operator(bpy.types.Operator):
+    bl_idname = "preflight.export_all_groups"
+    bl_label = "Export All Groups"
+    bl_description = "Export all export groups to the chosen export destination."
+
+    @classmethod
+    def poll(cls, context):
+        """
+        Poll for ability to perform export. Only return
+        true if there is at least 1 group, and all objects
+        in export groups are set.
+        """
+
+        groups = context.scene.preflight_props.fbx_export_groups
+
+        if len(groups) < 1:
+            return False
+
+        for group in groups:
+            if len(group.obj_names) < 1:
+                return False
+
+            for obj in group.obj_names:
+                if not obj.obj_pointer:
+                    return False
+
+        return True
+
+    def execute(self, context):
+        # SETUP
+        groups = context.scene.preflight_props.fbx_export_groups
+
+        # SAFETY CHECK
+        if not helpers.groups_are_unique(groups):
+            self.report(
+                {'WARNING'}, "Cannot export with duplicate group names.")
+            return {'CANCELLED'}
+
+        if len(groups) < 1:
+            self.report(
+                {'WARNING'}, "Must have at least 1 export group to export files.")
+            return {'CANCELLED'}
+
+        # DO GROUP EXPORT
+        for group_idx, group in enumerate(groups):
+            try:
+                bpy.ops.preflight.export_single_group(group_idx=group_idx)
+                # self.export_group(group, context)
+                self.report({'INFO'}, "Exported Group {0} of {1} Successfully.".format(
+                    group_idx+1, len(groups)))
+            except Exception as e:
+                print(e)
+                self.report(
+                    {'ERROR'}, "There was an error while exporting: {0}.".format(group.name))
+                return {'CANCELLED'}
+
+        # DO ANIMATION EXPORT
+        if context.scene.preflight_props.export_options.separate_animations:
+            try:
+                self.export_animations(context)
+            except Exception as e:
+                print(e)
+                self.report(
+                    {'ERROR'}, "There was an error while exporting animations")
+                return {'CANCELLED'}
+
+        # FINISH
+        self.report(
+            {'INFO'}, "Exported {0} Groups Successfully.".format(len(groups)))
+        return {'FINISHED'}
 
     def export_animations(self, context):
         """

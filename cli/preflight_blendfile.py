@@ -38,7 +38,7 @@ def main():
             export_animations)
 
     # Do Export
-    bpy.ops.preflight.export_groups()
+    bpy.ops.preflight.export_all_groups()
 
     # Restore Original Output Settings
     if fbx_output is not None:
