@@ -16,13 +16,6 @@
 # #
 # # ##### END GPL LICENSE BLOCK #####
 
-from . properties import PreflightOptionsGroup
-from . menus import PF_MT_preflight_menu
-import traceback
-import bpy
-from . import developer_utils
-import importlib
-
 bl_info = {
     "name": "FBX Preflight",
     "author": "Apsis Labs",
@@ -35,6 +28,9 @@ bl_info = {
 # load and reload submodules
 ##################################
 
+from . import developer_utils
+import importlib
+
 importlib.reload(developer_utils)
 modules = developer_utils.setup_addon_modules(
     __path__, __name__, "bpy" in locals())
@@ -42,7 +38,8 @@ modules = developer_utils.setup_addon_modules(
 
 # register
 ##################################
-
+import bpy
+import traceback
 
 addon_keymaps = []
 
@@ -64,6 +61,9 @@ def unregister_keymaps():
 
     addon_keymaps.clear()
 
+
+from . properties import PreflightOptionsGroup
+from . menus import PF_MT_preflight_menu
 
 def register():
     try:
