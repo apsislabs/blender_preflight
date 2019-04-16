@@ -34,16 +34,22 @@ class PF_PT_preflight_panel(bpy.types.Panel):
         groups = context.scene.preflight_props.fbx_export_groups
 
         # Export Groups
-        for group_idx, group in enumerate(groups):
-            self.layout_export_group(group_idx, group, layout, context)
+        if len(groups) == 0:
+            nothing_box = layout.box()
+            nothing_box.label("No groups to export...", icon="QUESTION")
+        else:
+            for group_idx, group in enumerate(groups):
+                self.layout_export_group(group_idx, group, layout, context)
 
         layout.separator()
 
         # New Buttons
         new_row = layout.row(align=True)
         new_row.scale_y = LARGE_BUTTON_SCALE_Y
-        new_button = new_row.operator("preflight.add_export_group", icon="ZOOMIN")
-        create_button = new_row.operator("preflight.create_group_from_selection")
+        new_button = new_row.operator(
+            "preflight.add_export_group", icon="ZOOMIN")
+        create_button = new_row.operator(
+            "preflight.create_group_from_selection")
 
         # Export Button
         export_row = layout.row()
@@ -115,11 +121,13 @@ class PF_PT_preflight_panel(bpy.types.Panel):
         header_row.alert = False
 
         sort_column = header_row.row(align=True)
-        up = sort_column.operator("preflight.export_group_move_slot", icon='TRIA_UP', text="")
+        up = sort_column.operator(
+            "preflight.export_group_move_slot", icon='TRIA_UP', text="")
         up.group_idx = group_idx
         up.direction = "UP"
 
-        down = sort_column.operator("preflight.export_group_move_slot", icon='TRIA_DOWN', text="")
+        down = sort_column.operator(
+            "preflight.export_group_move_slot", icon='TRIA_DOWN', text="")
         down.group_idx = group_idx
         down.direction = "DOWN"
 
