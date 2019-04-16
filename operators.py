@@ -23,6 +23,7 @@ import re
 from . import helpers
 from . properties import PreflightExportGroup
 
+
 class PF_OT_add_selection_to_preflight_group(bpy.types.Operator):
     bl_idname = "preflight.add_selection_to_group"
     bl_label = "Add Selection"
@@ -327,6 +328,24 @@ class PF_OT_reset_export_options_operator(bpy.types.Operator):
 
     def invoke(self, context, event):
         return context.window_manager.invoke_confirm(self, event)
+
+
+class PF_OT_export_group_move_slot(bpy.types.Operator):
+    bl_idname = "preflight.export_group_move_slot"
+    bl_label = "Move Export Group Slot"
+    bl_description = "Move this Export Group up or down the list."
+
+    group_idx = bpy.props.IntProperty()
+    direction = bpy.props.StringProperty(default="UP")
+
+    def execute(self, context):
+        if self.direction == "UP":
+            context.scene.preflight_props.fbx_export_groups.move(
+                self.group_idx,  self.group_idx - 1)
+        elif self.direction == "DOWN":
+            context.scene.preflight_props.fbx_export_groups.move(
+                self.group_idx,  self.group_idx + 1)
+        return {'FINISHED'}
 
 
 def ensure_export_path(export_path):

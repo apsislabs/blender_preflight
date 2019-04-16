@@ -110,6 +110,15 @@ class PF_PT_preflight_panel(bpy.types.Panel):
         header_row.prop(group, "name", text="")
         header_row.alert = False
 
+        sort_column = header_row.row(align=True)
+        up = sort_column.operator("preflight.export_group_move_slot", icon='TRIA_UP', text="")
+        up.group_idx = group_idx
+        up.direction = "UP"
+
+        down = sort_column.operator("preflight.export_group_move_slot", icon='TRIA_DOWN', text="")
+        down.group_idx = group_idx
+        down.direction = "DOWN"
+
         header_row.operator(
             "preflight.export_single_group", icon="EXPORT", text="",
             emboss=False).group_idx = group_idx
