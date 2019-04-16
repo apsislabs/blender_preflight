@@ -23,25 +23,7 @@ import re
 from . import helpers
 
 
-class MigratePreflightGroups(bpy.types.Operator):
-    bl_idname = "preflight.migrate_groups"
-    bl_label = "Migrate Preflight Groups"
-    bl_description = "Migrate Preflight Groups from 2.78 to 2.8x"
-
-    def execute(self, context):
-        groups = context.scene.preflight_props.fbx_export_groups
-        for group_idx, group in enumerate(groups):
-            for obj_idx, obj in enumerate(group.obj_names):
-                if obj.obj_name and obj.obj_pointer is None:
-                    data = bpy.data.objects.get(obj.obj_name)
-                    if data is not None:
-                        print('Migrating ' + obj.obj_name)
-                        obj.obj_pointer = data
-
-        return {'FINISHED'}
-
-
-class AddSelectionToPreflightGroup(bpy.types.Operator):
+class PF_OT_add_selection_to_preflight_group(bpy.types.Operator):
     bl_idname = "preflight.add_selection_to_group"
     bl_label = "Add Selection"
     bl_description = "Add Selection to an export group"
@@ -65,7 +47,7 @@ class AddSelectionToPreflightGroup(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class AddPreflightObjectOperator(bpy.types.Operator):
+class PF_OT_add_preflight_object_operator(bpy.types.Operator):
     bl_idname = "preflight.add_object_to_group"
     bl_label = "Add Object"
     bl_description = "Add an object to this export group."
@@ -81,7 +63,7 @@ class AddPreflightObjectOperator(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class RemovePreflightObjectOperator(bpy.types.Operator):
+class PF_OT_remove_preflight_object_operator(bpy.types.Operator):
     bl_idname = "preflight.remove_object_from_group"
     bl_label = "Remove Object"
     bl_description = "Remove object from this export group."
@@ -98,7 +80,7 @@ class RemovePreflightObjectOperator(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class AddPreflightExportGroupOperator(bpy.types.Operator):
+class PF_OT_add_preflight_export_group_operator(bpy.types.Operator):
     bl_idname = "preflight.add_export_group"
     bl_label = "Add Export Group"
     bl_description = "Add an export group. Each group will be exported to its own .fbx file with all selected objects."
@@ -111,7 +93,7 @@ class AddPreflightExportGroupOperator(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class RemovePreflightExportGroupOperator(bpy.types.Operator):
+class PF_OT_remove_preflight_export_group_operator(bpy.types.Operator):
     bl_idname = "preflight.remove_export_group"
     bl_label = "Remove Export Group"
     bl_description = "Remove an export group."
@@ -126,7 +108,7 @@ class RemovePreflightExportGroupOperator(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class ExportMeshGroupsOperator(bpy.types.Operator):
+class PF_OT_export_mesh_groups_operator(bpy.types.Operator):
     bl_idname = "preflight.export_groups"
     bl_label = "Export All Groups"
     bl_description = "Export all export groups to the chosen export destination."
@@ -304,7 +286,7 @@ class ExportMeshGroupsOperator(bpy.types.Operator):
             self.export_objects([obj], export_path, **export_options)
 
 
-class ResetExportOptionsOperator(bpy.types.Operator):
+class PF_OT_reset_export_options_operator(bpy.types.Operator):
     bl_idname = "preflight.reset_export_options"
     bl_label = "Reset Export Options"
     bl_description = "Reset all export options to default values."
@@ -316,22 +298,6 @@ class ResetExportOptionsOperator(bpy.types.Operator):
 
     def invoke(self, context, event):
         return context.window_manager.invoke_confirm(self, event)
-
-
-class AddExportDestinationOperator(bpy.types.Operator):
-    bl_idname = "preflight.add_export_destination"
-    bl_label = "New Export Destination"
-    bl_description = "Add a new export destination"
-
-    destination_name = bpy.props.StringProperty()
-
-    def execute(self, context):
-        if self.destination_name is not None:
-            destination = context.scene.preflight_props.export_destinations.add()
-            destination.name = self.destination_name
-            helpers.redraw_properties()
-
-        return {'FINISHED'}
 
 
 def ensure_export_path(export_path):

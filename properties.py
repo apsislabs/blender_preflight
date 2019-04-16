@@ -23,7 +23,6 @@ import bpy
 #
 
 
-
 class PreflightMeshGroup(bpy.types.PropertyGroup):
     """Property group of mesh names."""
 

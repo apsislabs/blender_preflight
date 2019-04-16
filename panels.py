@@ -78,7 +78,7 @@ class PF_PT_preflight_panel(bpy.types.Panel):
 
     def layout_object_list(self, layout, group, group_idx):
         obj_list_row = layout.row()
-        obj_list_row.template_list("ExportObjectUIList", "obj_list", group,
+        obj_list_row.template_list("PF_UL_export_object_ui_list", "obj_list", group,
                                    "obj_names", group, "obj_idx")
 
         obj_list_actions_col = obj_list_row.column(align=True)

@@ -19,7 +19,7 @@
 import bpy
 
 
-class ExportObjectUIList(bpy.types.UIList):
+class PF_UL_export_object_ui_list(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data,
                   active_propname, index):
         # We could write some code to decide which icon to use here...
