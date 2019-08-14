@@ -26,12 +26,12 @@ import bpy
 class PreflightMeshGroup(bpy.types.PropertyGroup):
     """Property group of mesh names."""
 
-    obj_pointer = bpy.props.PointerProperty(
+    obj_pointer: bpy.props.PointerProperty(
         name="Object Pointer",
         type=bpy.types.Object,
         description="Object to Export")
 
-    obj_name = bpy.props.StringProperty(
+    obj_name: bpy.props.StringProperty(
         name="Object Name",
         description="Name of the object to export. Note: If the object name changes, the reference will be lost.",
         default="")
@@ -40,26 +40,26 @@ class PreflightMeshGroup(bpy.types.PropertyGroup):
 class PreflightExportGroup(bpy.types.PropertyGroup):
     """Property group of export options."""
 
-    is_collapsed = bpy.props.BoolProperty(
+    is_collapsed: bpy.props.BoolProperty(
         name="Collapse Group",
         description="Collapse the display of this export group.",
         default=False)
-    name = bpy.props.StringProperty(
+    name: bpy.props.StringProperty(
         name="Export Group Name",
         description="File name for this export group. Will be converted to camel case. Duplicate names will cause an error.",
         default="")
-    include_animations = bpy.props.BoolProperty(
+    include_animations: bpy.props.BoolProperty(
         name="Include Animations",
         description="Include animations along with the armatures in this export group.",
         default=False)
-    apply_modifiers = bpy.props.BoolProperty(
+    apply_modifiers: bpy.props.BoolProperty(
         name="Apply Modifiers",
         description="Apply modifiers while performing this export.",
         default=True)
-    obj_names = bpy.props.CollectionProperty(type=PreflightMeshGroup)
-    obj_idx = bpy.props.IntProperty(name="Object Index", default=0)
+    obj_names: bpy.props.CollectionProperty(type=PreflightMeshGroup)
+    obj_idx: bpy.props.IntProperty(name="Object Index", default=0)
 
-    export_location = bpy.props.StringProperty(
+    export_location: bpy.props.StringProperty(
         name="Export To",
         description="Choose an export location. Relative to the base export location set in the Export Options.",
         default="",
@@ -122,19 +122,19 @@ class PreflightExportOptionsGroup(bpy.types.PropertyGroup):
         return dict((k, opts[k]) for k in self.allowed_keys if k in opts)
 
     # Axis Properties
-    object_types = bpy.props.EnumProperty(name="Object Types", items=object_types_enum, default={
+    object_types: bpy.props.EnumProperty(name="Object Types", items=object_types_enum, default={
                                           'ARMATURE', 'MESH', 'EMPTY', 'OTHER'}, options={'ENUM_FLAG'})
-    axis_up = bpy.props.EnumProperty(name="Up", items=axis_enum, default="Y")
-    axis_forward = bpy.props.EnumProperty(
+    axis_up: bpy.props.EnumProperty(name="Up", items=axis_enum, default="Y")
+    axis_forward: bpy.props.EnumProperty(
         name="Forward", items=axis_enum, default="-Z")
-    use_anim = bpy.props.BoolProperty(name="Use Animations", default=True)
+    use_anim: bpy.props.BoolProperty(name="Use Animations", default=True)
 
-    separate_animations = bpy.props.BoolProperty(
+    separate_animations: bpy.props.BoolProperty(
         name="Export Animations to Separate File",
         description="Include all animations in a separate animations file.",
         default=True)
 
-    export_location = bpy.props.StringProperty(
+    export_location: bpy.props.StringProperty(
         name="Export To",
         description="Choose an export location. Relative location prefixed with '//'.",
         default="//",
@@ -145,6 +145,6 @@ class PreflightExportOptionsGroup(bpy.types.PropertyGroup):
 class PreflightOptionsGroup(bpy.types.PropertyGroup):
     """Parent property group for preflight."""
 
-    export_options = bpy.props.PointerProperty(
+    export_options: bpy.props.PointerProperty(
         type=PreflightExportOptionsGroup)
-    fbx_export_groups = bpy.props.CollectionProperty(type=PreflightExportGroup)
+    fbx_export_groups: bpy.props.CollectionProperty(type=PreflightExportGroup)
