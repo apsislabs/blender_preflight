@@ -162,6 +162,5 @@ class PF_PT_preflight_export_options_panel(bpy.types.Panel):
         layout.prop(export_options, "axis_forward")
         layout.separator()
         layout.prop(export_options, "use_anim")
-        layout.prop(export_options, "separate_animations")
         layout.separator()
         layout.operator("preflight.reset_export_options")

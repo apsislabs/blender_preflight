@@ -346,38 +346,10 @@ class PF_OT_export_mesh_groups_operator(bpy.types.Operator):
                     {'ERROR'}, "There was an error while exporting: {0}.".format(group.name))
                 return {'CANCELLED'}
 
-        # DO ANIMATION EXPORT
-        if context.scene.preflight_props.export_options.separate_animations:
-            try:
-                self.export_animations(context)
-            except Exception as e:
-                print(e)
-                self.report(
-                    {'ERROR'}, "There was an error while exporting animations")
-                return {'CANCELLED'}
-
         # FINISH
         self.report(
             {'INFO'}, "Exported {0} Groups Successfully.".format(len(groups)))
         return {'FINISHED'}
-
-    def export_animations(self, context):
-        """
-        Export each armature in the current context with all
-        animations attached.
-        """
-        export_options = context.scene.preflight_props.export_options.defaults_for_unity(
-            object_types={'ARMATURE'})
-
-        for obj in context.scene.objects:
-            if obj.type != 'ARMATURE':
-                continue
-            export_dir = context.scene.preflight_props.export_options.export_location
-            export_path = export_path_for_string(
-                obj.name, export_dir, suffix="@animations")
-            if not ensure_export_path(export_path):
-                raise ValueError("Invalid Export Path")
-            self.export_objects([obj], export_path, **export_options)
 
 
 class PF_OT_reset_export_options_operator(bpy.types.Operator):

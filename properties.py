@@ -131,8 +131,8 @@ class PreflightExportOptionsGroup(bpy.types.PropertyGroup):
 
     separate_animations: bpy.props.BoolProperty(
         name="Export Animations to Separate File",
-        description="Include all animations in a separate animations file.",
-        default=True)
+        description="DEPRECATED",
+        default=False)
 
     export_location: bpy.props.StringProperty(
         name="Export To",
