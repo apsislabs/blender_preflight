@@ -29,7 +29,7 @@ class PF_OT_add_selection_to_preflight_group(bpy.types.Operator):
     bl_label = "Add Selection"
     bl_description = "Add Selection to an export group"
 
-    group_idx = bpy.props.IntProperty()
+    group_idx: bpy.props.IntProperty()
 
     def execute(self, context):
         if self.group_idx is not None:
@@ -53,7 +53,7 @@ class PF_OT_create_preflight_group_from_selection(bpy.types.Operator):
     bl_label = "Create Group from Selection..."
     bl_description = "Create an export group from the current selection."
 
-    group_name = bpy.props.StringProperty(
+    group_name: bpy.props.StringProperty(
         name="New Group Name",
         default="New Export Group"
     )
@@ -92,7 +92,7 @@ class PF_OT_add_preflight_object_operator(bpy.types.Operator):
     bl_label = "Add Object"
     bl_description = "Add an object to this export group."
 
-    group_idx = bpy.props.IntProperty()
+    group_idx: bpy.props.IntProperty()
 
     def execute(self, context):
         if self.group_idx is not None:
@@ -108,8 +108,8 @@ class PF_OT_remove_preflight_object_operator(bpy.types.Operator):
     bl_label = "Remove Object"
     bl_description = "Remove object from this export group."
 
-    group_idx = bpy.props.IntProperty()
-    object_idx = bpy.props.IntProperty()
+    group_idx: bpy.props.IntProperty()
+    object_idx: bpy.props.IntProperty()
 
     def execute(self, context):
         if self.group_idx is not None and self.object_idx is not None:
@@ -125,7 +125,7 @@ class PF_OT_add_preflight_export_group_operator(bpy.types.Operator):
     bl_label = "Add Export Group..."
     bl_description = "Add an export group. Each group will be exported to its own .fbx file with all selected objects."
 
-    group_name = bpy.props.StringProperty(
+    group_name: bpy.props.StringProperty(
         name="New Group Name",
         default="New Export Group"
     )
@@ -149,7 +149,7 @@ class PF_OT_remove_preflight_export_group_operator(bpy.types.Operator):
     bl_label = "Remove Export Group"
     bl_description = "Remove an export group."
 
-    group_idx = bpy.props.IntProperty()
+    group_idx: bpy.props.IntProperty()
 
     def execute(self, context):
         if self.group_idx is not None:
@@ -164,7 +164,7 @@ class PF_OT_export_mesh_group_operator(bpy.types.Operator):
     bl_label = "Export Single Group"
     bl_description = "Export a single group to the chosen export destination."
 
-    group_idx = bpy.props.IntProperty()
+    group_idx: bpy.props.IntProperty()
 
     def execute(self, context):
         # SANITY CHECK
@@ -200,7 +200,7 @@ class PF_OT_export_mesh_group_operator(bpy.types.Operator):
 
         for obj in objects:
             if obj is not None:
-                obj.select = True
+                obj.select_set(True)
             else:
                 message = error_message_for_obj_name(obj.name)
                 self.report({'ERROR'}, message)
@@ -213,9 +213,9 @@ class PF_OT_export_mesh_group_operator(bpy.types.Operator):
 
         for idx, obj in enumerate(objects):
             if obj is not None:
-                hidden_states.insert(idx, obj.hide)
+                hidden_states.insert(idx, obj.hide_viewport)
                 new_state = values[idx] if idx < len(values) else hide_state
-                obj.hide = new_state
+                obj.hide_viewport = new_state
 
         return hidden_states
 
@@ -265,7 +265,7 @@ class PF_OT_export_mesh_group_operator(bpy.types.Operator):
             obj.obj_pointer.name) for obj in group.obj_names]
 
         export_options = context.scene.preflight_props.export_options.get_options_dict(
-            use_anim=group.include_animations,
+            bake_anim=group.include_animations,
             use_mesh_modifiers=group.apply_modifiers
         )
 
@@ -399,8 +399,8 @@ class PF_OT_export_group_move_slot(bpy.types.Operator):
     bl_label = "Move Export Group Slot"
     bl_description = "Move this Export Group up or down the list."
 
-    group_idx = bpy.props.IntProperty()
-    direction = bpy.props.StringProperty(default="UP")
+    group_idx: bpy.props.IntProperty()
+    direction: bpy.props.StringProperty(default="UP")
 
     def execute(self, context):
         if self.direction == "UP":

@@ -36,7 +36,7 @@ class PF_PT_preflight_panel(bpy.types.Panel):
         # Export Groups
         if len(groups) == 0:
             nothing_box = layout.box()
-            nothing_box.label("No groups to export...", icon="QUESTION")
+            nothing_box.label(text="No groups to export...", icon="QUESTION")
         else:
             for group_idx, group in enumerate(groups):
                 self.layout_export_group(group_idx, group, layout, context)
@@ -47,7 +47,7 @@ class PF_PT_preflight_panel(bpy.types.Panel):
         new_row = layout.row(align=True)
         new_row.scale_y = LARGE_BUTTON_SCALE_Y
         new_button = new_row.operator(
-            "preflight.add_export_group", icon="ZOOMIN")
+            "preflight.add_export_group", icon="ADD")
         create_button = new_row.operator(
             "preflight.create_group_from_selection")
 
@@ -82,7 +82,7 @@ class PF_PT_preflight_panel(bpy.types.Panel):
             # Export Options
             group_box.separator()
             options_column = group_box.column()
-            options_column.label("Export Location (optional)",
+            options_column.label(text="Export Location (optional)",
                                  icon="LIBRARY_DATA_DIRECT")
             options_column.prop(group, "export_location", text="")
             options_column.separator()
@@ -97,11 +97,11 @@ class PF_PT_preflight_panel(bpy.types.Panel):
         obj_list_actions_col = obj_list_row.column(align=True)
 
         add_obj_button = obj_list_actions_col.operator(
-            "preflight.add_object_to_group", text="", icon="ZOOMIN")
+            "preflight.add_object_to_group", text="", icon="ADD")
         add_obj_button.group_idx = group_idx
 
         remove_obj_button = obj_list_actions_col.operator(
-            "preflight.remove_object_from_group", text="", icon="ZOOMOUT")
+            "preflight.remove_object_from_group", text="", icon="REMOVE")
         remove_obj_button.group_idx = group_idx
         remove_obj_button.object_idx = group.obj_idx
 
@@ -152,18 +152,15 @@ class PF_PT_preflight_export_options_panel(bpy.types.Panel):
         layout = self.layout
         export_options = context.scene.preflight_props.export_options
 
-        layout.label("Export Location", icon="LIBRARY_DATA_DIRECT")
+        layout.label(text="Export Location", icon="LIBRARY_DATA_DIRECT")
         layout.prop(export_options, "export_location", text="")
         layout.separator()
-        layout.label("Export Types", icon="EXPORT")
+        layout.label(text="Export Types", icon="EXPORT")
         layout.prop(export_options, "object_types")
         layout.separator()
         layout.prop(export_options, "axis_up")
         layout.prop(export_options, "axis_forward")
         layout.separator()
-        layout.label("Animation Options", icon="ARMATURE_DATA")
-        layout.prop(export_options, "bake_anim_step")
-        layout.prop(export_options, "bake_anim_simplify_factor")
         layout.prop(export_options, "use_anim")
         layout.prop(export_options, "separate_animations")
         layout.separator()
