@@ -19,8 +19,8 @@
 bl_info = {
     "name": "FBX Preflight",
     "author": "Apsis Labs",
-    "version": (1, 1, 0),
-    "blender": (2, 79, 0),
+    "version": (2, 0, 0),
+    "blender": (2, 80, 0),
     "category": "Import-Export",
     "description": "Define export groups to be output as FBX files."
 }
@@ -62,28 +62,68 @@ def unregister_keymaps():
     addon_keymaps.clear()
 
 
+from . properties import PreflightMeshGroup
+from . properties import PreflightExportGroup
+from . properties import PreflightExportOptionsGroup
 from . properties import PreflightOptionsGroup
 from . menus import PF_MT_preflight_menu
+from . menus import PF_MT_remove_export_group_menu
+from . menus import PF_MT_add_selection_menu
+from . operators import PF_OT_add_selection_to_preflight_group
+from . operators import PF_OT_create_preflight_group_from_selection
+from . operators import PF_OT_add_preflight_object_operator
+from . operators import PF_OT_remove_preflight_object_operator
+from . operators import PF_OT_add_preflight_export_group_operator
+from . operators import PF_OT_remove_preflight_export_group_operator
+from . operators import PF_OT_export_mesh_group_operator
+from . operators import PF_OT_export_mesh_groups_operator
+from . operators import PF_OT_reset_export_options_operator
+from . operators import PF_OT_export_group_move_slot
+from . panels import PF_PT_preflight_panel
+from . panels import PF_PT_preflight_export_options_panel
+from . ui import PF_UL_export_object_ui_list
+
+
+classes = (
+    PreflightMeshGroup,
+    PreflightExportGroup,
+    PreflightExportOptionsGroup,
+    PreflightOptionsGroup,
+    PF_MT_preflight_menu,
+    PF_MT_remove_export_group_menu,
+    PF_MT_add_selection_menu,
+    PF_OT_add_selection_to_preflight_group,
+    PF_OT_create_preflight_group_from_selection,
+    PF_OT_add_preflight_object_operator,
+    PF_OT_remove_preflight_object_operator,
+    PF_OT_add_preflight_export_group_operator,
+    PF_OT_remove_preflight_export_group_operator,
+    PF_OT_export_mesh_group_operator,
+    PF_OT_export_mesh_groups_operator,
+    PF_OT_reset_export_options_operator,
+    PF_OT_export_group_move_slot,
+    PF_PT_preflight_panel,
+    PF_PT_preflight_export_options_panel,
+    PF_UL_export_object_ui_list,
+)
+
 
 def register():
-    try:
-        bpy.utils.register_module(__name__)
-    except:
-        traceback.print_exc()
+    from bpy.utils import register_class
+    for cls in classes:
+        register_class(cls)
 
     register_keymaps()
-    bpy.types.Scene.preflight_props = bpy.props.PointerProperty(
-        type=PreflightOptionsGroup)
-    print("Registered {} with {} modules".format(
-        bl_info["name"], len(modules)))
+    bpy.types.Scene.preflight_props = bpy.props.PointerProperty(type=PreflightOptionsGroup)
 
 
 def unregister():
-    try:
-        bpy.utils.unregister_module(__name__)
-    except:
-        traceback.print_exc()
+    from bpy.utils import unregister_class
+    for cls in reversed(classes):
+        unregister_class(cls)
 
     unregister_keymaps()
 
-    print("Unregistered {}".format(bl_info["name"]))
+
+if __name__ == "__main__":
+    register()
