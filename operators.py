@@ -200,7 +200,7 @@ class PF_OT_export_mesh_group_operator(bpy.types.Operator):
 
         for obj in objects:
             if obj is not None:
-                obj.select = True
+                obj.select_set(True)
             else:
                 message = error_message_for_obj_name(obj.name)
                 self.report({'ERROR'}, message)
@@ -213,9 +213,9 @@ class PF_OT_export_mesh_group_operator(bpy.types.Operator):
 
         for idx, obj in enumerate(objects):
             if obj is not None:
-                hidden_states.insert(idx, obj.hide)
+                hidden_states.insert(idx, obj.hide_viewport)
                 new_state = values[idx] if idx < len(values) else hide_state
-                obj.hide = new_state
+                obj.hide_viewport = new_state
 
         return hidden_states
 
@@ -265,7 +265,7 @@ class PF_OT_export_mesh_group_operator(bpy.types.Operator):
             obj.obj_pointer.name) for obj in group.obj_names]
 
         export_options = context.scene.preflight_props.export_options.get_options_dict(
-            use_anim=group.include_animations,
+            bake_anim=group.include_animations,
             use_mesh_modifiers=group.apply_modifiers
         )
 

@@ -25,7 +25,7 @@ class PF_UL_export_object_ui_list(bpy.types.UIList):
         # We could write some code to decide which icon to use here...
         label = self.label_for_object_name(obj=item.obj_pointer)
         icon = self.icon_for_object_name(obj=item.obj_pointer)
-        layout.label(label, icon=icon)
+        layout.label(text=label, icon=icon)
 
     def label_for_object_name(self, obj):
 
